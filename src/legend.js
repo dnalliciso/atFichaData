@@ -5,7 +5,7 @@ export function renderCategoryLegend(container) {
     .map(
       (state) => `
         <div class="legend-row">
-          <span class="swatch swatch--pattern"></span>
+          <span class="swatch swatch--pattern" style="background-color:${state.color}"></span>
           <span>${state.label}</span>
         </div>
       `,

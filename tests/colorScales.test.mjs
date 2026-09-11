@@ -73,10 +73,10 @@ test("resolveCellColor devuelve el color asignado en el Excel para Tiempo", () =
   assert.equal(resolveCellColor(row, reportConfig.response), "#2372B6");
 });
 
-test("resolveCellColor NO reemplaza el color de filas con estado especial", () => {
+test("resolveCellColor usa el color fijo del estado especial, no el del Excel", () => {
   const row = { estado_bloque: "eventos_cliente", color_disp: "#2D87E4", color_tiempo: "gray" };
-  assert.equal(resolveCellColor(row, reportConfig.availability), "#2D87E4");
-  assert.equal(resolveCellColor(row, reportConfig.response), "gray");
+  assert.equal(resolveCellColor(row, reportConfig.availability), specialStateFor("eventos_cliente").color);
+  assert.equal(resolveCellColor(row, reportConfig.response), specialStateFor("eventos_cliente").color);
 });
 
 test("resolveCellColor cae al color de respaldo si la celda no trae color", () => {
@@ -88,13 +88,17 @@ test("computeHoverOpacity es 1 en el punto exacto", () => {
   assert.equal(computeHoverOpacity(50, 50, 100), 1);
 });
 
-test("computeHoverOpacity baja con la distancia al valor del hover", () => {
-  const far = computeHoverOpacity(0, 100, 100);
-  assert.ok(far < 1);
+test("computeHoverOpacity es 1 dentro de la tolerancia", () => {
+  assert.equal(computeHoverOpacity(52, 50, 100), 1);
 });
 
-test("computeHoverOpacity nunca baja del piso configurado", () => {
-  assert.equal(computeHoverOpacity(0, 1000, 100, 0.2), 0.2);
+test("computeHoverOpacity es 0 (desaparece) fuera de la tolerancia", () => {
+  assert.equal(computeHoverOpacity(0, 100, 100), 0);
+});
+
+test("computeHoverOpacity respeta una tolerancia custom", () => {
+  assert.equal(computeHoverOpacity(60, 50, 100, 0.2), 1);
+  assert.equal(computeHoverOpacity(80, 50, 100, 0.2), 0);
 });
 
 test("computeHoverOpacity devuelve 1 si algún valor no es finito", () => {

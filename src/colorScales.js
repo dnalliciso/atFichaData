@@ -3,14 +3,14 @@
 // tal cual, para ambos reportes.
 export const FALLBACK_COLOR = "#e4e6ea";
 
-// El Excel no distingue negro/gris "limpio" para estos estados (ambos
-// traen su propio color_disp/color_tiempo, igual que una fila normal),
-// así que la señal de "esto no es un dato real" se agrega como patrón
-// (rayas diagonales + borde punteado) por encima del color asignado,
-// nunca reemplazando el color — ver heatmapMain.js / heatmapHourly.js.
+// El Excel trae color_disp/color_tiempo también para estos estados, pero
+// son colores de dato (a veces muy pálidos, ej. #68C0FC) pensados para la
+// escala normal — no sirven como marca de estado especial porque se
+// pierden contra el fondo. Estos dos estados usan un color propio, fijo,
+// independiente del Excel, más el patrón de rayas como refuerzo visual.
 export const SPECIAL_STATES = {
-  eventos_cliente: { label: "Caída Total" },
-  marcado_atentus: { label: "Datos no válidos" },
+  eventos_cliente: { color: "#0b1636", label: "Caída Total" },
+  marcado_atentus: { color: "#5b6478", label: "Datos no válidos" },
 };
 
 export function specialStateFor(estadoBloque) {
@@ -61,11 +61,17 @@ export function cellLabelFor(row, config) {
 }
 
 export function resolveCellColor(row, config) {
+  const special = specialStateFor(row.estado_bloque);
+  if (special) return special.color;
   const raw = row[config.colorKey];
   return raw ? raw : FALLBACK_COLOR;
 }
 
-export function computeHoverOpacity(cellValue, hoverValue, domainSpan, floor = 0.12) {
+// Visibilidad al pasar el mouse por la leyenda: las celdas cuyo valor cae
+// dentro de la tolerancia del punto bajo el cursor quedan visibles
+// (opacidad 1); el resto desaparece (opacidad 0). No es un desvanecido
+// gradual — es mostrar/ocultar según coincidencia con ese valor.
+export function computeHoverOpacity(cellValue, hoverValue, domainSpan, tolerance = 0.05) {
   if (
     !Number.isFinite(cellValue) ||
     !Number.isFinite(hoverValue) ||
@@ -75,7 +81,7 @@ export function computeHoverOpacity(cellValue, hoverValue, domainSpan, floor = 0
     return 1;
   }
   const distance = Math.abs(cellValue - hoverValue) / domainSpan;
-  return Math.max(floor, 1 - Math.min(1, distance));
+  return distance <= tolerance ? 1 : 0;
 }
 
 // Construye un degradado de leyenda a partir de los colores ya asignados

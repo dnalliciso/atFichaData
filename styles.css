@@ -216,8 +216,10 @@ select {
 }
 
 .swatch--pattern {
-  background: repeating-linear-gradient(45deg, var(--navy) 0 2px, #d7dbe4 2px 6px);
-  border: 1.5px dashed var(--navy);
+  /* background-color viene inline por fila (color fijo del estado); acá
+     solo se agrega la textura de rayas encima, igual que en el heatmap. */
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.55) 0 2px, transparent 2px 6px);
+  border: 1.5px dashed rgba(255, 255, 255, 0.8);
 }
 
 .report-surface {

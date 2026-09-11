@@ -54,7 +54,7 @@ function appendSpecialHatchDef(svg) {
     .attr("y1", 0)
     .attr("x2", 0)
     .attr("y2", 6)
-    .attr("stroke", "rgba(11, 22, 54, 0.55)")
+    .attr("stroke", "rgba(255, 255, 255, 0.55)")
     .attr("stroke-width", 3);
 }
 
@@ -175,7 +175,7 @@ export function render(rows, options) {
     .attr("height", y.bandwidth())
     .attr("rx", 4)
     .attr("fill", "none")
-    .attr("stroke", "#0b1636")
+    .attr("stroke", "rgba(255, 255, 255, 0.8)")
     .attr("stroke-width", 1.2)
     .attr("stroke-dasharray", "3,2")
     .attr("pointer-events", "none");
