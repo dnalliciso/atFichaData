@@ -3,15 +3,16 @@ import { MONTH_ORDER } from "./state.js";
 import {
   reportConfig,
   average,
-  buildSequentialScale,
-  buildDivergingTimeScale,
   resolveCellColor,
   cellLabelFor,
   computeHoverOpacity,
   specialStateFor,
+  buildEmpiricalGradient,
 } from "./colorScales.js";
 import { renderGradientLegend } from "./legend.js";
 import { showTooltip, moveTooltip, hideTooltip, hourlyTooltipHtml } from "./tooltip.js";
+
+const SPECIAL_HATCH_ID = "special-hatch-main";
 
 function aggregateHourlyByDay(rows) {
   const grouped = d3.rollups(
@@ -19,6 +20,8 @@ function aggregateHourlyByDay(rows) {
     (items) => ({
       disponibilidad: average(items.map((row) => row.disponibilidad)),
       tiempo: average(items.map((row) => row.tiempo)),
+      color_disp: items[0].color_disp,
+      color_tiempo: items[0].color_tiempo,
       date: items[0].fecha,
       mes: items[0].mes,
       dia: items[0].dia,
@@ -35,8 +38,28 @@ function aggregateHourlyByDay(rows) {
   );
 }
 
+function appendSpecialHatchDef(svg) {
+  const defs = svg.append("defs");
+  const pattern = defs
+    .append("pattern")
+    .attr("id", SPECIAL_HATCH_ID)
+    .attr("width", 6)
+    .attr("height", 6)
+    .attr("patternUnits", "userSpaceOnUse")
+    .attr("patternTransform", "rotate(45)");
+  pattern.append("rect").attr("width", 6).attr("height", 6).attr("fill", "transparent");
+  pattern
+    .append("line")
+    .attr("x1", 0)
+    .attr("y1", 0)
+    .attr("x2", 0)
+    .attr("y2", 6)
+    .attr("stroke", "rgba(11, 22, 54, 0.55)")
+    .attr("stroke-width", 3);
+}
+
 export function render(rows, options) {
-  const { heatmapEl, tooltipEl, state, paletteInterpolate, onDaySelected } = options;
+  const { heatmapEl, tooltipEl, state, onDaySelected } = options;
   const config = reportConfig[state.report];
   const data = aggregateHourlyByDay(rows);
 
@@ -57,14 +80,9 @@ export function render(rows, options) {
     return;
   }
 
-  const values = data.map((d) => d[config.valueKey]).filter(Number.isFinite);
-  const isDiverging = config.valueKey === "tiempo";
-  const domain = isDiverging ? [0, d3.max(values) || 1] : d3.extent(values);
-  const colorScale = isDiverging
-    ? buildDivergingTimeScale(domain[1])
-    : buildSequentialScale(values, paletteInterpolate);
+  const gradient = buildEmpiricalGradient(data, config);
 
-  const margin = { top: 34, right: 24, bottom: 60, left: 64 };
+  const margin = { top: 34, right: 110, bottom: 60, left: 64 };
   const cellWidth = 30;
   const cellHeight = days.length > 20 ? 14 : 18;
   const width = Math.max(720, margin.left + hours.length * cellWidth + margin.right);
@@ -78,6 +96,8 @@ export function render(rows, options) {
     .attr("width", width)
     .attr("height", height)
     .attr("role", "img");
+
+  appendSpecialHatchDef(svg);
 
   const x = d3.scaleBand().domain(hours).range([margin.left, width - margin.right]).padding(0.03);
   const y = d3.scaleBand().domain(days).range([margin.top, chartHeight]).padding(0.03);
@@ -133,11 +153,32 @@ export function render(rows, options) {
     .attr("width", x.bandwidth())
     .attr("height", y.bandwidth())
     .attr("rx", 4)
-    .attr("fill", (d) => resolveCellColor(d, config, colorScale))
+    .attr("fill", (d) => resolveCellColor(d, config))
     .on("mouseenter", (event, d) => showTooltip(tooltipEl, event, hourlyTooltipHtml(d, config)))
     .on("mousemove", (event) => moveTooltip(tooltipEl, event))
     .on("mouseleave", () => hideTooltip(tooltipEl))
     .on("click", (_, d) => onDaySelected(d.dayKey));
+
+  const specialCells = cells.filter((d) => specialStateFor(d.estado_bloque));
+
+  specialCells
+    .append("rect")
+    .attr("width", x.bandwidth())
+    .attr("height", y.bandwidth())
+    .attr("rx", 4)
+    .attr("fill", `url(#${SPECIAL_HATCH_ID})`)
+    .attr("pointer-events", "none");
+
+  specialCells
+    .append("rect")
+    .attr("width", x.bandwidth())
+    .attr("height", y.bandwidth())
+    .attr("rx", 4)
+    .attr("fill", "none")
+    .attr("stroke", "#0b1636")
+    .attr("stroke-width", 1.2)
+    .attr("stroke-dasharray", "3,2")
+    .attr("pointer-events", "none");
 
   cells
     .append("text")
@@ -147,27 +188,29 @@ export function render(rows, options) {
     .attr("text-anchor", "middle")
     .text((d) => (x.bandwidth() >= 34 ? cellLabelFor(d, config) : ""));
 
-  const gradientId = `legend-${state.report}`;
-  renderGradientLegend(svg, {
-    colorScale,
-    domain,
-    config,
-    margin,
-    width,
-    chartHeight,
-    gradientId,
-    onHover: (hoverValue) => {
-      const span = domain[1] - domain[0];
-      cells
-        .select("rect")
-        .transition()
-        .duration(120)
-        .attr("fill-opacity", (d) =>
-          specialStateFor(d.estado_bloque) ? 1 : computeHoverOpacity(d[config.valueKey], hoverValue, span),
-        );
-    },
-    onHoverEnd: () => {
-      cells.select("rect").transition().duration(120).attr("fill-opacity", 1);
-    },
-  });
+  if (gradient) {
+    const gradientId = `legend-${state.report}`;
+    renderGradientLegend(svg, {
+      colorScale: gradient.colorAt,
+      domain: gradient.domain,
+      config,
+      margin,
+      width,
+      chartHeight,
+      gradientId,
+      onHover: (hoverValue) => {
+        const span = gradient.domain[1] - gradient.domain[0];
+        cells
+          .select("rect")
+          .transition()
+          .duration(120)
+          .attr("fill-opacity", (d) =>
+            specialStateFor(d.estado_bloque) ? 1 : computeHoverOpacity(d[config.valueKey], hoverValue, span),
+          );
+      },
+      onHoverEnd: () => {
+        cells.select("rect").transition().duration(120).attr("fill-opacity", 1);
+      },
+    });
+  }
 }

@@ -5,7 +5,7 @@ export function renderCategoryLegend(container) {
     .map(
       (state) => `
         <div class="legend-row">
-          <span class="swatch" style="background:${state.color}"></span>
+          <span class="swatch swatch--pattern"></span>
           <span>${state.label}</span>
         </div>
       `,
@@ -13,21 +13,25 @@ export function renderCategoryLegend(container) {
     .join("");
 }
 
+// Leyenda de degradado vertical (a la derecha del heatmap, como la
+// referencia): la escala/dominio ya vienen resueltos por quien llama
+// (colorScales.buildEmpiricalGradient) — acá solo se dibuja y se
+// engancha el hover-scrub sobre el eje Y de la barra.
 export function renderGradientLegend(svg, options) {
   const { colorScale, domain, config, margin, width, chartHeight, gradientId, onHover, onHoverEnd } = options;
   const [min, max] = domain;
-  const legendWidth = Math.min(430, Math.max(260, width * 0.5));
-  const legendHeight = 14;
-  const x = (width - legendWidth) / 2;
-  const y = chartHeight + 48;
+  const barWidth = 16;
+  const barHeight = Math.max(120, chartHeight - margin.top - 30);
+  const x = width - margin.right + 40;
+  const y = margin.top;
 
   const defs = svg.append("defs");
   const gradient = defs
     .append("linearGradient")
     .attr("id", gradientId)
     .attr("x1", "0%")
-    .attr("x2", "100%")
-    .attr("y1", "0%")
+    .attr("x2", "0%")
+    .attr("y1", "100%")
     .attr("y2", "0%");
 
   d3.range(0, 1.01, 0.1).forEach((stop) => {
@@ -37,21 +41,13 @@ export function renderGradientLegend(svg, options) {
       .attr("stop-color", colorScale(min + stop * (max - min)));
   });
 
-  svg
-    .append("text")
-    .attr("class", "range-label")
-    .attr("x", x - 8)
-    .attr("y", y + legendHeight)
-    .attr("text-anchor", "end")
-    .text(formatValue(min, config));
-
   const bar = svg
     .append("rect")
     .attr("x", x)
     .attr("y", y)
-    .attr("width", legendWidth)
-    .attr("height", legendHeight)
-    .attr("rx", 2)
+    .attr("width", barWidth)
+    .attr("height", barHeight)
+    .attr("rx", 3)
     .attr("fill", `url(#${gradientId})`);
 
   if (onHover && onHoverEnd) {
@@ -61,11 +57,20 @@ export function renderGradientLegend(svg, options) {
   svg
     .append("text")
     .attr("class", "range-label")
-    .attr("x", x + legendWidth + 8)
-    .attr("y", y + legendHeight)
+    .attr("x", x + barWidth / 2)
+    .attr("y", y - 10)
+    .attr("text-anchor", "middle")
     .text(formatValue(max, config));
 
-  const axisScale = d3.scaleLinear().domain([min, max]).range([x, x + legendWidth]);
+  svg
+    .append("text")
+    .attr("class", "range-label")
+    .attr("x", x + barWidth / 2)
+    .attr("y", y + barHeight + 18)
+    .attr("text-anchor", "middle")
+    .text(formatValue(min, config));
+
+  const axisScale = d3.scaleLinear().domain([min, max]).range([y + barHeight, y]);
   const ticks = axisScale.ticks(5);
   svg
     .append("g")
@@ -73,17 +78,17 @@ export function renderGradientLegend(svg, options) {
     .data(ticks)
     .join("text")
     .attr("class", "legend-axis")
-    .attr("x", (d) => axisScale(d))
-    .attr("y", y + 35)
-    .attr("text-anchor", "middle")
+    .attr("x", x + barWidth + 8)
+    .attr("y", (d) => axisScale(d) + 3)
+    .attr("text-anchor", "start")
     .text((d) => `${d.toFixed(config.unit === "%" ? 1 : 0)}${config.unit}`);
 
   if (onHover && onHoverEnd) {
     bar
       .on("mousemove", (event) => {
-        const [mx] = d3.pointer(event, svg.node());
-        const clampedX = Math.max(x, Math.min(x + legendWidth, mx));
-        onHover(axisScale.invert(clampedX));
+        const [, my] = d3.pointer(event, svg.node());
+        const clampedY = Math.max(y, Math.min(y + barHeight, my));
+        onHover(axisScale.invert(clampedY));
       })
       .on("mouseleave", onHoverEnd);
   }

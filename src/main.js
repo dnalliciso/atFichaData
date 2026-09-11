@@ -1,6 +1,6 @@
 import { loadWorkbookFromUrl, loadWorkbookFromFile, dateKey, formatDate } from "./data.js";
 import { state, ALL_MONTHS, getFilteredRows, getMonths } from "./state.js";
-import { reportConfig, palettes, average } from "./colorScales.js";
+import { reportConfig, average } from "./colorScales.js";
 import { renderCategoryLegend } from "./legend.js";
 import * as heatmapMain from "./heatmapMain.js";
 import * as heatmapHourly from "./heatmapHourly.js";
@@ -15,7 +15,6 @@ const els = {
   responseAvg: document.querySelector("#responseAvg"),
   objectiveSelect: document.querySelector("#objectiveSelect"),
   monthSelect: document.querySelector("#monthSelect"),
-  paletteSelect: document.querySelector("#paletteSelect"),
   heatmap: document.querySelector("#heatmap"),
   hourlyHeatmap: document.querySelector("#hourlyHeatmap"),
   detailTitle: document.querySelector("#detailTitle"),
@@ -37,10 +36,6 @@ function showError(message) {
 function clearError() {
   els.errorBox.hidden = true;
   els.errorBox.textContent = "";
-}
-
-function activePaletteInterpolate() {
-  return (palettes[els.paletteSelect.value] || palettes.plasma).interpolate;
 }
 
 function setRows(rows) {
@@ -102,7 +97,6 @@ function render() {
     state.report === "availability"
       ? "Eje X: hora del día. Eje Y: día del período. Cada celda muestra disponibilidad."
       : "Eje X: hora del día. Eje Y: día del período. Cada celda muestra tiempo de respuesta.";
-  els.paletteSelect.hidden = state.report === "response";
 
   renderCategoryLegend(els.legend);
 
@@ -110,7 +104,6 @@ function render() {
     heatmapEl: els.heatmap,
     tooltipEl: els.tooltip,
     state,
-    paletteInterpolate: activePaletteInterpolate(),
     onDaySelected: (dayKey) => {
       state.selectedDayKey = dayKey;
       render();
@@ -125,7 +118,6 @@ function render() {
     detailTitleEl: els.detailTitle,
     tooltipEl: els.tooltip,
     state,
-    paletteInterpolate: activePaletteInterpolate(),
   });
 
   eventsPanel.render(rows, els.eventsList);
@@ -153,8 +145,6 @@ els.monthSelect.addEventListener("change", () => {
   state.selectedDayKey = "";
   render();
 });
-
-els.paletteSelect.addEventListener("change", () => render());
 
 els.fileInput.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];

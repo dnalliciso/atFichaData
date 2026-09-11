@@ -11,11 +11,11 @@ const {
   formatValue,
   compactCellLabel,
   cellLabelFor,
-  buildSequentialScale,
-  buildDivergingTimeScale,
-  computeHoverOpacity,
   resolveCellColor,
+  computeHoverOpacity,
+  buildEmpiricalGradient,
   reportConfig,
+  FALLBACK_COLOR,
 } = await import("../src/colorScales.js");
 
 test("specialStateFor resuelve eventos_cliente como Caída Total", () => {
@@ -63,31 +63,25 @@ test("cellLabelFor usa el valor compacto en Disponibilidad", () => {
   assert.equal(cellLabelFor(row, reportConfig.availability), "98.4");
 });
 
-test("buildSequentialScale interpola dentro del rango", () => {
-  const scale = buildSequentialScale([0, 50, 100], (t) => `t=${t.toFixed(2)}`);
-  assert.equal(scale(0), "t=0.00");
-  assert.equal(scale(100), "t=1.00");
+test("resolveCellColor devuelve el color asignado en el Excel para Disponibilidad", () => {
+  const row = { estado_bloque: "valor_base", color_disp: "#65B636", color_tiempo: "#2372B6" };
+  assert.equal(resolveCellColor(row, reportConfig.availability), "#65B636");
 });
 
-test("buildDivergingTimeScale: 0 es azul (bueno), max es rojo (malo)", () => {
-  const scale = buildDivergingTimeScale(100);
-  assert.equal(scale(0), "rgb(5, 48, 97)");
-  assert.equal(scale(100), "rgb(103, 0, 31)");
+test("resolveCellColor devuelve el color asignado en el Excel para Tiempo", () => {
+  const row = { estado_bloque: "valor_base", color_disp: "#65B636", color_tiempo: "#2372B6" };
+  assert.equal(resolveCellColor(row, reportConfig.response), "#2372B6");
 });
 
-test("resolveCellColor prioriza el estado especial sobre la escala", () => {
-  const scale = buildDivergingTimeScale(100);
-  const row = { estado_bloque: "eventos_cliente", tiempo: 50 };
-  assert.equal(
-    resolveCellColor(row, reportConfig.response, scale),
-    specialStateFor("eventos_cliente").color,
-  );
+test("resolveCellColor NO reemplaza el color de filas con estado especial", () => {
+  const row = { estado_bloque: "eventos_cliente", color_disp: "#2D87E4", color_tiempo: "gray" };
+  assert.equal(resolveCellColor(row, reportConfig.availability), "#2D87E4");
+  assert.equal(resolveCellColor(row, reportConfig.response), "gray");
 });
 
-test("resolveCellColor usa la escala cuando no hay estado especial", () => {
-  const scale = buildDivergingTimeScale(100);
-  const row = { estado_bloque: "valor_base", tiempo: 0 };
-  assert.equal(resolveCellColor(row, reportConfig.response, scale), scale(0));
+test("resolveCellColor cae al color de respaldo si la celda no trae color", () => {
+  const row = { estado_bloque: "valor_base", color_disp: "", color_tiempo: null };
+  assert.equal(resolveCellColor(row, reportConfig.availability), FALLBACK_COLOR);
 });
 
 test("computeHoverOpacity es 1 en el punto exacto", () => {
@@ -105,4 +99,21 @@ test("computeHoverOpacity nunca baja del piso configurado", () => {
 
 test("computeHoverOpacity devuelve 1 si algún valor no es finito", () => {
   assert.equal(computeHoverOpacity(NaN, 50, 100), 1);
+});
+
+test("buildEmpiricalGradient devuelve null sin filas válidas", () => {
+  const rows = [{ estado_bloque: "eventos_cliente", disponibilidad: NaN, color_disp: "" }];
+  assert.equal(buildEmpiricalGradient(rows, reportConfig.availability), null);
+});
+
+test("buildEmpiricalGradient usa los colores reales como paradas del degradado", () => {
+  const rows = [
+    { disponibilidad: 0, color_disp: "#C2272D" },
+    { disponibilidad: 50, color_disp: "#FFFFFF" },
+    { disponibilidad: 100, color_disp: "#65B636" },
+  ];
+  const gradient = buildEmpiricalGradient(rows, reportConfig.availability, 10);
+  assert.deepEqual(gradient.domain, [0, 100]);
+  assert.equal(gradient.colorAt(0), "rgb(194, 39, 45)");
+  assert.equal(gradient.colorAt(100), "rgb(101, 182, 54)");
 });

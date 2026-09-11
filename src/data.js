@@ -66,6 +66,8 @@ export function parseWorkbook(buffer) {
         mediana_tiempo: Number(row.mediana_tiempo),
         estado_bloque: normalizeText(row.estado_bloque),
         label_tiempo: normalizeText(row.label_tiempo),
+        color_disp: normalizeText(row.color_disp),
+        color_tiempo: normalizeText(row.color_tiempo),
         downtime: Number(row.downtime || 0),
         eventos_cliente: Number(row.eventos_cliente || 0),
         marcado_atentus: Number(row.marcado_atentus || 0),

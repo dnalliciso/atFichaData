@@ -1,8 +1,30 @@
-import { reportConfig, buildSequentialScale, buildDivergingTimeScale, resolveCellColor } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.js";
 import { showTooltip, moveTooltip, hideTooltip, hourlyTooltipHtml } from "./tooltip.js";
 
+const SPECIAL_HATCH_ID = "special-hatch-hourly";
+
+function appendSpecialHatchDef(svg) {
+  const defs = svg.append("defs");
+  const pattern = defs
+    .append("pattern")
+    .attr("id", SPECIAL_HATCH_ID)
+    .attr("width", 6)
+    .attr("height", 6)
+    .attr("patternUnits", "userSpaceOnUse")
+    .attr("patternTransform", "rotate(45)");
+  pattern.append("rect").attr("width", 6).attr("height", 6).attr("fill", "transparent");
+  pattern
+    .append("line")
+    .attr("x1", 0)
+    .attr("y1", 0)
+    .attr("x2", 0)
+    .attr("y2", 6)
+    .attr("stroke", "rgba(11, 22, 54, 0.55)")
+    .attr("stroke-width", 3);
+}
+
 export function render(rows, options) {
-  const { hourlyEl, detailTitleEl, tooltipEl, state, paletteInterpolate } = options;
+  const { hourlyEl, detailTitleEl, tooltipEl, state } = options;
   const config = reportConfig[state.report];
   const sorted = [...rows].sort((a, b) => a.hora - b.hora);
   const selectedDay = sorted[0];
@@ -16,12 +38,6 @@ export function render(rows, options) {
     return;
   }
 
-  const values = sorted.map((row) => row[config.valueKey]).filter(Number.isFinite);
-  const isDiverging = config.valueKey === "tiempo";
-  const colorScale = isDiverging
-    ? buildDivergingTimeScale(d3.max(values))
-    : buildSequentialScale(values, paletteInterpolate);
-
   const margin = { top: 28, right: 18, bottom: 42, left: 34 };
   const width = Math.max(680, margin.left + sorted.length * 28 + margin.right);
   const height = 214;
@@ -32,6 +48,8 @@ export function render(rows, options) {
     .attr("width", width)
     .attr("height", height);
 
+  appendSpecialHatchDef(svg);
+
   const x = d3
     .scaleBand()
     .domain(sorted.map((row) => row.hora))
@@ -40,21 +58,44 @@ export function render(rows, options) {
   const y = margin.top;
   const cellHeight = 94;
 
-  svg
+  const cells = svg
     .append("g")
-    .selectAll("rect")
+    .selectAll("g")
     .data(sorted)
-    .join("rect")
+    .join("g")
+    .attr("transform", (d) => `translate(${x(d.hora)},${y})`);
+
+  cells
+    .append("rect")
     .attr("class", "heat-cell")
-    .attr("x", (d) => x(d.hora))
-    .attr("y", y)
     .attr("width", x.bandwidth())
     .attr("height", cellHeight)
     .attr("rx", 4)
-    .attr("fill", (d) => resolveCellColor(d, config, colorScale))
+    .attr("fill", (d) => resolveCellColor(d, config))
     .on("mouseenter", (event, d) => showTooltip(tooltipEl, event, hourlyTooltipHtml(d, config)))
     .on("mousemove", (event) => moveTooltip(tooltipEl, event))
     .on("mouseleave", () => hideTooltip(tooltipEl));
+
+  const specialCells = cells.filter((d) => specialStateFor(d.estado_bloque));
+
+  specialCells
+    .append("rect")
+    .attr("width", x.bandwidth())
+    .attr("height", cellHeight)
+    .attr("rx", 4)
+    .attr("fill", `url(#${SPECIAL_HATCH_ID})`)
+    .attr("pointer-events", "none");
+
+  specialCells
+    .append("rect")
+    .attr("width", x.bandwidth())
+    .attr("height", cellHeight)
+    .attr("rx", 4)
+    .attr("fill", "none")
+    .attr("stroke", "#0b1636")
+    .attr("stroke-width", 1.2)
+    .attr("stroke-dasharray", "3,2")
+    .attr("pointer-events", "none");
 
   svg
     .append("g")
