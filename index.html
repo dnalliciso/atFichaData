@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Informes Heatmap</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Informes interactivos</p>
+          <h1>Disponibilidad y tiempo de respuesta</h1>
+        </div>
+        <label class="file-control">
+          <span>Excel</span>
+          <input id="fileInput" type="file" accept=".xlsx,.xls" />
+        </label>
+      </header>
+
+      <section class="summary-strip" aria-label="Resumen">
+        <article>
+          <span>Objetivo</span>
+          <strong id="objectiveName">Cargando...</strong>
+        </article>
+        <article>
+          <span>Rango</span>
+          <strong id="dateRange">-</strong>
+        </article>
+        <article>
+          <span>Disponibilidad promedio</span>
+          <strong id="availabilityAvg">-</strong>
+        </article>
+        <article>
+          <span>Respuesta promedio</span>
+          <strong id="responseAvg">-</strong>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <aside class="controls-panel" aria-label="Controles">
+          <div class="control-group">
+            <span class="control-label">Informe</span>
+            <div class="segmented" role="tablist" aria-label="Tipo de informe">
+              <button class="segment active" data-report="availability" type="button">Disponibilidad</button>
+              <button class="segment" data-report="response" type="button">Respuesta</button>
+            </div>
+          </div>
+
+          <label class="control-group">
+            <span class="control-label">Objetivo</span>
+            <select id="objectiveSelect"></select>
+          </label>
+
+          <label class="control-group">
+            <span class="control-label">Período</span>
+            <select id="monthSelect"></select>
+          </label>
+
+          <div class="legend" id="legend"></div>
+        </aside>
+
+        <section class="report-surface">
+          <div class="section-heading">
+            <div>
+              <p id="reportKicker">Disponibilidad global</p>
+              <h2 id="reportTitle">Heatmap hora / día</h2>
+            </div>
+            <div class="chart-actions">
+              <select id="paletteSelect" aria-label="Paleta de color">
+                <option value="plasma">Plasma</option>
+                <option value="viridis">Viridis</option>
+                <option value="turbo">Turbo</option>
+                <option value="magma">Magma</option>
+              </select>
+              <p id="reportSubtitle"></p>
+            </div>
+          </div>
+
+          <div id="errorBox" class="error-box" hidden></div>
+          <div id="heatmap" class="chart-wrap" aria-label="Heatmap principal"></div>
+
+          <div class="detail-grid">
+            <section>
+              <div class="section-heading compact">
+                <div>
+                  <p>Detalle</p>
+                  <h2 id="detailTitle">Selecciona un día</h2>
+                </div>
+              </div>
+              <div id="hourlyHeatmap" class="chart-wrap small" aria-label="Detalle horario"></div>
+            </section>
+            <section class="records-panel">
+              <div class="section-heading compact">
+                <div>
+                  <p>Eventos</p>
+                  <h2>Bloques marcados</h2>
+                </div>
+              </div>
+              <div id="eventsList" class="events-list"></div>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="tooltip" class="tooltip" hidden></div>
+
+    <script src="./vendor/xlsx.full.min.js"></script>
+    <script src="./vendor/d3.min.js"></script>
+    <script src="./src/app.js"></script>
+  </body>
+</html>
