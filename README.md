@@ -18,8 +18,9 @@ La primera fuente de datos es `dataExample/Heatmap_objetivo.xlsx`. La app lee la
 - `tiempo`
 - `estado_bloque` (`valor_base` / `eventos_cliente` / `marcado_atentus`)
 - `label_tiempo` (etiqueta de anomalía, ej. "1.59x", mostrada sobre la celda en el reporte de Tiempo)
+- `color_disp` y `color_tiempo` (color asignado a cada celda, ya calculado en el Excel — la app lo usa tal cual, no recalcula ningún color)
 
-Las columnas `color_disp`, `color_tiempo`, `label_disp`, `valor_base`, `desviacion` y `valor_color` pueden estar presentes en el Excel pero la app no las usa: el color de cada celda se calcula en el navegador (ver tabla de referencia más abajo).
+Las columnas `label_disp`, `valor_base`, `desviacion` y `valor_color` pueden estar presentes en el Excel pero la app no las usa.
 
 ## Levantar localmente
 
@@ -53,10 +54,10 @@ sale de un ejemplo de la galería y qué es lógica propia de este proyecto:
 
 | Módulo | Referencia de galería | Qué es propio de este proyecto |
 |---|---|---|
-| `src/heatmapMain.js` | [`graph/heatmap_style.html`](https://d3-graph-gallery.com/graph/heatmap_style.html) ("Ready to go heatmap": band scales, `scaleSequential`, tooltip) | Eje hora×día, estados negro/gris, etiqueta de anomalía "x", integración con la leyenda de hover |
+| `src/heatmapMain.js` | [`graph/heatmap_style.html`](https://d3-graph-gallery.com/graph/heatmap_style.html) ("Ready to go heatmap": band scales, tooltip) | Eje hora×día, color por celda tomado del Excel, patrón de rayas para estados especiales, etiqueta de anomalía "x", integración con la leyenda de hover |
 | `src/heatmapHourly.js` | Mismo ejemplo que `heatmapMain.js`, variante de una sola fila | — |
 | `src/legend.js` | Patrón de tooltip/gradiente de la galería | La animación de hover-scrub (atenuar celdas por distancia al valor bajo el cursor) no existe en la galería, es de este proyecto |
-| `src/colorScales.js` | — | Escala diverging rojo/azul fija para Tiempo de respuesta, resolución de estados especiales por `estado_bloque` |
+| `src/colorScales.js` | — | Lee `color_disp`/`color_tiempo` tal cual del Excel (no calcula ninguna escala propia); resuelve estados especiales por `estado_bloque` |
 | `src/tooltip.js` | Ejemplo "Add tooltip to heatmap" de la galería | — |
 
 Si en el futuro se agrega otro tipo de gráfico, sumarlo a esta tabla con
