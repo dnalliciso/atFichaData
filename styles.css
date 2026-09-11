@@ -194,6 +194,28 @@ select {
   padding: 0 10px;
 }
 
+.date-range {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.date-range input[type="date"] {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 0 8px;
+  min-width: 0;
+}
+
+.date-range-sep {
+  color: var(--muted);
+}
+
 .legend {
   display: grid;
   gap: 10px;
@@ -213,13 +235,6 @@ select {
   height: 14px;
   border: 1px solid rgba(11, 22, 54, 0.15);
   border-radius: 3px;
-}
-
-.swatch--pattern {
-  /* background-color viene inline por fila (color fijo del estado); acá
-     solo se agrega la textura de rayas encima, igual que en el heatmap. */
-  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.55) 0 2px, transparent 2px 6px);
-  border: 1.5px dashed rgba(255, 255, 255, 0.8);
 }
 
 .report-surface {
@@ -286,6 +301,7 @@ select {
 .cell-label {
   fill: #46525f;
   font-size: 12px;
+  letter-spacing: 0.02em;
   pointer-events: none;
 }
 
@@ -303,6 +319,58 @@ select {
 .range-label {
   fill: #7a7f87;
   font-size: 12px;
+}
+
+.month-bar {
+  fill: var(--accent);
+  opacity: 0.85;
+}
+
+.month-bar-label {
+  fill: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.legend-handle-knob {
+  fill: #fff;
+  stroke: var(--navy);
+  stroke-width: 2.5px;
+  cursor: grab;
+}
+
+.legend-handle-knob:active,
+.legend-handle-knob.dragging {
+  cursor: grabbing;
+  fill: var(--accent);
+}
+
+.legend-handle-connector {
+  stroke: var(--navy);
+  stroke-width: 1.5px;
+}
+
+.legend-handle-label {
+  fill: var(--navy);
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+@keyframes pulse-alert {
+  0%,
+  100% {
+    fill-opacity: 1;
+  }
+  50% {
+    fill-opacity: 0.35;
+  }
+}
+
+.pulse-alert {
+  animation: pulse-alert 1.4s ease-in-out infinite;
 }
 
 .detail-grid {

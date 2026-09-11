@@ -1,5 +1,5 @@
 import { loadWorkbookFromUrl, loadWorkbookFromFile, dateKey, formatDate } from "./data.js";
-import { state, ALL_MONTHS, getFilteredRows, getMonths } from "./state.js";
+import { state, getFilteredRows, defaultMonthRange } from "./state.js";
 import { reportConfig, average } from "./colorScales.js";
 import { renderCategoryLegend } from "./legend.js";
 import * as heatmapMain from "./heatmapMain.js";
@@ -14,7 +14,8 @@ const els = {
   availabilityAvg: document.querySelector("#availabilityAvg"),
   responseAvg: document.querySelector("#responseAvg"),
   objectiveSelect: document.querySelector("#objectiveSelect"),
-  monthSelect: document.querySelector("#monthSelect"),
+  dateFromInput: document.querySelector("#dateFromInput"),
+  dateToInput: document.querySelector("#dateToInput"),
   heatmap: document.querySelector("#heatmap"),
   hourlyHeatmap: document.querySelector("#hourlyHeatmap"),
   detailTitle: document.querySelector("#detailTitle"),
@@ -46,7 +47,8 @@ function setRows(rows) {
   state.rows = rows;
   const objectives = Array.from(new Set(rows.map((row) => row.objetivo))).sort();
   state.objective = objectives[0];
-  state.selectedMonth = "";
+  state.dateFrom = "";
+  state.dateTo = "";
   state.selectedDayKey = "";
   populateFilters();
   render();
@@ -59,13 +61,13 @@ function populateFilters() {
     .join("");
   els.objectiveSelect.value = state.objective;
 
-  const months = getMonths(getFilteredRows(false));
-  state.selectedMonth ||= ALL_MONTHS;
-  els.monthSelect.innerHTML = [
-    `<option value="${ALL_MONTHS}">Todo el período</option>`,
-    ...months.map((month) => `<option value="${month}">${month}</option>`),
-  ].join("");
-  els.monthSelect.value = state.selectedMonth;
+  if (!state.dateFrom || !state.dateTo) {
+    const range = defaultMonthRange(getFilteredRows(false));
+    state.dateFrom = range.from;
+    state.dateTo = range.to;
+  }
+  els.dateFromInput.value = state.dateFrom;
+  els.dateToInput.value = state.dateTo;
 }
 
 function updateSummary(rows) {
@@ -134,14 +136,21 @@ document.querySelectorAll("[data-report]").forEach((button) => {
 
 els.objectiveSelect.addEventListener("change", () => {
   state.objective = els.objectiveSelect.value;
-  state.selectedMonth = "";
+  state.dateFrom = "";
+  state.dateTo = "";
   state.selectedDayKey = "";
   populateFilters();
   render();
 });
 
-els.monthSelect.addEventListener("change", () => {
-  state.selectedMonth = els.monthSelect.value;
+els.dateFromInput.addEventListener("change", () => {
+  state.dateFrom = els.dateFromInput.value;
+  state.selectedDayKey = "";
+  render();
+});
+
+els.dateToInput.addEventListener("change", () => {
+  state.dateTo = els.dateToInput.value;
   state.selectedDayKey = "";
   render();
 });

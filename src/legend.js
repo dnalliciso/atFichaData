@@ -5,7 +5,7 @@ export function renderCategoryLegend(container) {
     .map(
       (state) => `
         <div class="legend-row">
-          <span class="swatch swatch--pattern" style="background-color:${state.color}"></span>
+          <span class="swatch" style="background-color:${state.color}"></span>
           <span>${state.label}</span>
         </div>
       `,
@@ -15,10 +15,11 @@ export function renderCategoryLegend(container) {
 
 // Leyenda de degradado vertical (a la derecha del heatmap, como la
 // referencia): la escala/dominio ya vienen resueltos por quien llama
-// (colorScales.buildEmpiricalGradient) — acá solo se dibuja y se
-// engancha el hover-scrub sobre el eje Y de la barra.
+// (colorScales.buildEmpiricalGradient) — acá solo se dibuja y, si se pasa
+// onScrub, se agrega un handle arrastrable que muestra el valor y filtra
+// las celdas que coinciden con él.
 export function renderGradientLegend(svg, options) {
-  const { colorScale, domain, config, margin, width, chartHeight, gradientId, onHover, onHoverEnd } = options;
+  const { colorScale, domain, config, margin, width, chartHeight, gradientId, onScrub } = options;
   const [min, max] = domain;
   const barWidth = 16;
   const barHeight = Math.max(120, chartHeight - margin.top - 30);
@@ -41,7 +42,7 @@ export function renderGradientLegend(svg, options) {
       .attr("stop-color", colorScale(min + stop * (max - min)));
   });
 
-  const bar = svg
+  svg
     .append("rect")
     .attr("x", x)
     .attr("y", y)
@@ -49,10 +50,6 @@ export function renderGradientLegend(svg, options) {
     .attr("height", barHeight)
     .attr("rx", 3)
     .attr("fill", `url(#${gradientId})`);
-
-  if (onHover && onHoverEnd) {
-    bar.style("cursor", "crosshair");
-  }
 
   svg
     .append("text")
@@ -83,13 +80,53 @@ export function renderGradientLegend(svg, options) {
     .attr("text-anchor", "start")
     .text((d) => `${d.toFixed(config.unit === "%" ? 1 : 0)}${config.unit}`);
 
-  if (onHover && onHoverEnd) {
-    bar
-      .on("mousemove", (event) => {
-        const [, my] = d3.pointer(event, svg.node());
-        const clampedY = Math.max(y, Math.min(y + barHeight, my));
-        onHover(axisScale.invert(clampedY));
-      })
-      .on("mouseleave", onHoverEnd);
+  if (!onScrub) return;
+
+  const handleGroup = svg.append("g").attr("class", "legend-handle");
+  let handleY = y;
+
+  const connector = handleGroup
+    .append("line")
+    .attr("x1", x - 6)
+    .attr("x2", x)
+    .attr("y1", handleY)
+    .attr("y2", handleY)
+    .attr("class", "legend-handle-connector")
+    .attr("opacity", 0);
+
+  const valueLabel = handleGroup
+    .append("text")
+    .attr("class", "legend-handle-label")
+    .attr("x", x - 12)
+    .attr("y", handleY + 4)
+    .attr("text-anchor", "end")
+    .attr("opacity", 0)
+    .text(formatValue(axisScale.invert(handleY), config));
+
+  const handle = handleGroup
+    .append("circle")
+    .attr("class", "legend-handle-knob")
+    .attr("cx", x + barWidth / 2)
+    .attr("cy", handleY)
+    .attr("r", 8);
+
+  function moveHandle(rawY) {
+    handleY = Math.max(y, Math.min(y + barHeight, rawY));
+    const value = axisScale.invert(handleY);
+    handle.attr("cy", handleY);
+    connector.attr("y1", handleY).attr("y2", handleY).attr("opacity", 1);
+    valueLabel.attr("y", handleY + 4).attr("opacity", 1).text(formatValue(value, config));
+    onScrub(value);
   }
+
+  const drag = d3
+    .drag()
+    .on("start", (event) => {
+      handle.classed("dragging", true);
+      moveHandle(event.y);
+    })
+    .on("drag", (event) => moveHandle(event.y))
+    .on("end", () => handle.classed("dragging", false));
+
+  handle.call(drag);
 }

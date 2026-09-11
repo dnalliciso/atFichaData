@@ -53,10 +53,14 @@
             <select id="objectiveSelect"></select>
           </label>
 
-          <label class="control-group">
+          <div class="control-group">
             <span class="control-label">Período</span>
-            <select id="monthSelect"></select>
-          </label>
+            <div class="date-range">
+              <input id="dateFromInput" type="date" aria-label="Desde" />
+              <span class="date-range-sep">–</span>
+              <input id="dateToInput" type="date" aria-label="Hasta" />
+            </div>
+          </div>
 
           <div class="legend" id="legend"></div>
         </aside>

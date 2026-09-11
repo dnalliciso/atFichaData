@@ -1,28 +1,6 @@
 import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.js";
 import { showTooltip, moveTooltip, hideTooltip, hourlyTooltipHtml } from "./tooltip.js";
 
-const SPECIAL_HATCH_ID = "special-hatch-hourly";
-
-function appendSpecialHatchDef(svg) {
-  const defs = svg.append("defs");
-  const pattern = defs
-    .append("pattern")
-    .attr("id", SPECIAL_HATCH_ID)
-    .attr("width", 6)
-    .attr("height", 6)
-    .attr("patternUnits", "userSpaceOnUse")
-    .attr("patternTransform", "rotate(45)");
-  pattern.append("rect").attr("width", 6).attr("height", 6).attr("fill", "transparent");
-  pattern
-    .append("line")
-    .attr("x1", 0)
-    .attr("y1", 0)
-    .attr("x2", 0)
-    .attr("y2", 6)
-    .attr("stroke", "rgba(255, 255, 255, 0.55)")
-    .attr("stroke-width", 3);
-}
-
 export function render(rows, options) {
   const { hourlyEl, detailTitleEl, tooltipEl, state } = options;
   const config = reportConfig[state.report];
@@ -48,8 +26,6 @@ export function render(rows, options) {
     .attr("width", width)
     .attr("height", height);
 
-  appendSpecialHatchDef(svg);
-
   const x = d3
     .scaleBand()
     .domain(sorted.map((row) => row.hora))
@@ -67,7 +43,10 @@ export function render(rows, options) {
 
   cells
     .append("rect")
-    .attr("class", "heat-cell")
+    .attr("class", (d) => {
+      const special = specialStateFor(d.estado_bloque);
+      return special?.pulse ? "heat-cell pulse-alert" : "heat-cell";
+    })
     .attr("width", x.bandwidth())
     .attr("height", cellHeight)
     .attr("rx", 4)
@@ -75,27 +54,6 @@ export function render(rows, options) {
     .on("mouseenter", (event, d) => showTooltip(tooltipEl, event, hourlyTooltipHtml(d, config)))
     .on("mousemove", (event) => moveTooltip(tooltipEl, event))
     .on("mouseleave", () => hideTooltip(tooltipEl));
-
-  const specialCells = cells.filter((d) => specialStateFor(d.estado_bloque));
-
-  specialCells
-    .append("rect")
-    .attr("width", x.bandwidth())
-    .attr("height", cellHeight)
-    .attr("rx", 4)
-    .attr("fill", `url(#${SPECIAL_HATCH_ID})`)
-    .attr("pointer-events", "none");
-
-  specialCells
-    .append("rect")
-    .attr("width", x.bandwidth())
-    .attr("height", cellHeight)
-    .attr("rx", 4)
-    .attr("fill", "none")
-    .attr("stroke", "rgba(255, 255, 255, 0.8)")
-    .attr("stroke-width", 1.2)
-    .attr("stroke-dasharray", "3,2")
-    .attr("pointer-events", "none");
 
   svg
     .append("g")

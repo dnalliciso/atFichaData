@@ -7,10 +7,11 @@ export const FALLBACK_COLOR = "#e4e6ea";
 // son colores de dato (a veces muy pálidos, ej. #68C0FC) pensados para la
 // escala normal — no sirven como marca de estado especial porque se
 // pierden contra el fondo. Estos dos estados usan un color propio, fijo,
-// independiente del Excel, más el patrón de rayas como refuerzo visual.
+// independiente del Excel: negro sólido (con pulso) para Caída Total,
+// gris sólido para Datos no válidos.
 export const SPECIAL_STATES = {
-  eventos_cliente: { color: "#0b1636", label: "Caída Total" },
-  marcado_atentus: { color: "#5b6478", label: "Datos no válidos" },
+  eventos_cliente: { color: "#000000", label: "Caída Total", pulse: true },
+  marcado_atentus: { color: "#5b6478", label: "Datos no válidos", pulse: false },
 };
 
 export function specialStateFor(estadoBloque) {
@@ -67,10 +68,11 @@ export function resolveCellColor(row, config) {
   return raw ? raw : FALLBACK_COLOR;
 }
 
-// Visibilidad al pasar el mouse por la leyenda: las celdas cuyo valor cae
-// dentro de la tolerancia del punto bajo el cursor quedan visibles
-// (opacidad 1); el resto desaparece (opacidad 0). No es un desvanecido
-// gradual — es mostrar/ocultar según coincidencia con ese valor.
+// Visibilidad al arrastrar el handle de la leyenda: las celdas cuyo valor
+// cae dentro de la tolerancia del punto donde está el handle quedan
+// visibles (opacidad 1); el resto desaparece (opacidad 0). No es un
+// desvanecido gradual — es mostrar/ocultar según coincidencia con ese
+// valor.
 export function computeHoverOpacity(cellValue, hoverValue, domainSpan, tolerance = 0.05) {
   if (
     !Number.isFinite(cellValue) ||

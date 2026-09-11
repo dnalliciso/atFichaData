@@ -12,7 +12,20 @@ import {
 import { renderGradientLegend } from "./legend.js";
 import { showTooltip, moveTooltip, hideTooltip, hourlyTooltipHtml } from "./tooltip.js";
 
-const SPECIAL_HATCH_ID = "special-hatch-main";
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MIN_RESERVED_DAYS = 31;
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function dayOffset(date, referenceStart) {
+  return Math.round((startOfDay(date) - referenceStart) / MS_PER_DAY);
+}
 
 function aggregateHourlyByDay(rows) {
   const grouped = d3.rollups(
@@ -38,26 +51,6 @@ function aggregateHourlyByDay(rows) {
   );
 }
 
-function appendSpecialHatchDef(svg) {
-  const defs = svg.append("defs");
-  const pattern = defs
-    .append("pattern")
-    .attr("id", SPECIAL_HATCH_ID)
-    .attr("width", 6)
-    .attr("height", 6)
-    .attr("patternUnits", "userSpaceOnUse")
-    .attr("patternTransform", "rotate(45)");
-  pattern.append("rect").attr("width", 6).attr("height", 6).attr("fill", "transparent");
-  pattern
-    .append("line")
-    .attr("x1", 0)
-    .attr("y1", 0)
-    .attr("x2", 0)
-    .attr("y2", 6)
-    .attr("stroke", "rgba(255, 255, 255, 0.55)")
-    .attr("stroke-width", 3);
-}
-
 export function render(rows, options) {
   const { heatmapEl, tooltipEl, state, onDaySelected } = options;
   const config = reportConfig[state.report];
@@ -71,8 +64,6 @@ export function render(rows, options) {
     ),
     ([key, date]) => ({ key, date }),
   ).sort((a, b) => a.date - b.date);
-  const days = dateEntries.map((entry) => entry.key);
-  const hours = d3.range(0, 24);
 
   heatmapEl.innerHTML = "";
   if (!data.length) {
@@ -80,13 +71,22 @@ export function render(rows, options) {
     return;
   }
 
+  // El grid reserva siempre el alto de un mes completo (31 filas) a
+  // partir del mes del primer día visible, para que acortar el rango de
+  // fechas (ej. solo 2 semanas) no cambie el tamaño del gráfico ni mueva
+  // el resto de la página.
+  const referenceStart = startOfMonth(dateEntries[0].date);
+  const lastOffset = dayOffset(dateEntries[dateEntries.length - 1].date, referenceStart);
+  const reservedDays = Math.max(MIN_RESERVED_DAYS, lastOffset + 1);
+
   const gradient = buildEmpiricalGradient(data, config);
 
-  const margin = { top: 34, right: 110, bottom: 60, left: 64 };
+  const hours = d3.range(0, 24);
+  const margin = { top: 40, right: 116, bottom: 60, left: 78 };
   const cellWidth = 30;
-  const cellHeight = days.length > 20 ? 14 : 18;
+  const cellHeight = 17;
   const width = Math.max(720, margin.left + hours.length * cellWidth + margin.right);
-  const chartHeight = margin.top + days.length * cellHeight;
+  const chartHeight = margin.top + reservedDays * cellHeight;
   const height = chartHeight + margin.bottom;
 
   const svg = d3
@@ -97,10 +97,13 @@ export function render(rows, options) {
     .attr("height", height)
     .attr("role", "img");
 
-  appendSpecialHatchDef(svg);
-
-  const x = d3.scaleBand().domain(hours).range([margin.left, width - margin.right]).padding(0.03);
-  const y = d3.scaleBand().domain(days).range([margin.top, chartHeight]).padding(0.03);
+  const x = d3.scaleBand().domain(hours).range([margin.left, width - margin.right]).padding(0.05);
+  const y = d3
+    .scaleBand()
+    .domain(d3.range(reservedDays))
+    .range([margin.top, chartHeight])
+    .padding(0.05);
+  const rowY = (date) => y(dayOffset(date, referenceStart));
 
   svg
     .append("g")
@@ -109,7 +112,7 @@ export function render(rows, options) {
     .join("text")
     .attr("class", "axis-label")
     .attr("x", (d) => x(d) + x.bandwidth() / 2)
-    .attr("y", margin.top - 12)
+    .attr("y", margin.top - 14)
     .attr("text-anchor", "middle")
     .text((d) => `${String(d).padStart(2, "0")}`);
 
@@ -119,37 +122,60 @@ export function render(rows, options) {
     .data(dateEntries)
     .join("text")
     .attr("class", "axis-label")
-    .attr("x", margin.left - 10)
-    .attr("y", (d) => y(d.key) + y.bandwidth() / 2 + 4)
+    .attr("x", margin.left - 14)
+    .attr("y", (d) => rowY(d.date) + y.bandwidth() / 2 + 4)
     .attr("text-anchor", "end")
     .text((d) => shortDateLabel(d.date));
 
+  // Etiqueta de mes: una franja vertical angosta a la izquierda de todo,
+  // en vez de texto en línea con los días (así no se pisan si el rango
+  // cruza más de un mes).
+  const monthGroups = d3.groups(dateEntries, (entry) => `${entry.date.getFullYear()}-${entry.date.getMonth()}`);
+  const monthBarX = 6;
+  const monthBarWidth = 14;
   svg
     .append("g")
-    .selectAll("text")
-    .data(
-      dateEntries.filter(
-        (entry, index, entries) =>
-          index === 0 || entry.date.getDate() === 1 || entry.date.getMonth() !== entries[index - 1].date.getMonth(),
-      ),
-    )
-    .join("text")
-    .attr("class", "axis-label")
-    .attr("x", 4)
-    .attr("y", (d) => y(d.key) - 4)
-    .attr("text-anchor", "start")
-    .text((d) => `${MONTH_ORDER[d.date.getMonth()].toUpperCase()} ${d.date.getFullYear()}`);
+    .selectAll("g")
+    .data(monthGroups)
+    .join("g")
+    .each(function ([, entries]) {
+      const first = entries[0];
+      const last = entries[entries.length - 1];
+      const y0 = rowY(first.date);
+      const y1 = rowY(last.date) + y.bandwidth();
+      const group = d3.select(this);
+      group
+        .append("rect")
+        .attr("class", "month-bar")
+        .attr("x", monthBarX)
+        .attr("y", y0)
+        .attr("width", monthBarWidth)
+        .attr("height", Math.max(y1 - y0, 1))
+        .attr("rx", 4);
+      group
+        .append("text")
+        .attr("class", "month-bar-label")
+        .attr("transform", `translate(${monthBarX + monthBarWidth / 2}, ${(y0 + y1) / 2}) rotate(-90)`)
+        .attr("text-anchor", "middle")
+        .text(`${MONTH_ORDER[first.date.getMonth()].toUpperCase()} ${first.date.getFullYear()}`);
+    });
 
   const cells = svg
     .append("g")
     .selectAll("g")
     .data(data)
     .join("g")
-    .attr("transform", (d) => `translate(${x(d.hora)},${y(d.dayKey)})`);
+    .attr("transform", (d) => `translate(${x(d.hora)},${rowY(d.date)})`);
 
   cells
     .append("rect")
-    .attr("class", (d) => `heat-cell ${state.selectedDayKey === d.dayKey ? "selected" : ""}`)
+    .attr("class", (d) => {
+      const special = specialStateFor(d.estado_bloque);
+      const classes = ["heat-cell"];
+      if (state.selectedDayKey === d.dayKey) classes.push("selected");
+      if (special?.pulse) classes.push("pulse-alert");
+      return classes.join(" ");
+    })
     .attr("width", x.bandwidth())
     .attr("height", y.bandwidth())
     .attr("rx", 4)
@@ -158,27 +184,6 @@ export function render(rows, options) {
     .on("mousemove", (event) => moveTooltip(tooltipEl, event))
     .on("mouseleave", () => hideTooltip(tooltipEl))
     .on("click", (_, d) => onDaySelected(d.dayKey));
-
-  const specialCells = cells.filter((d) => specialStateFor(d.estado_bloque));
-
-  specialCells
-    .append("rect")
-    .attr("width", x.bandwidth())
-    .attr("height", y.bandwidth())
-    .attr("rx", 4)
-    .attr("fill", `url(#${SPECIAL_HATCH_ID})`)
-    .attr("pointer-events", "none");
-
-  specialCells
-    .append("rect")
-    .attr("width", x.bandwidth())
-    .attr("height", y.bandwidth())
-    .attr("rx", 4)
-    .attr("fill", "none")
-    .attr("stroke", "rgba(255, 255, 255, 0.8)")
-    .attr("stroke-width", 1.2)
-    .attr("stroke-dasharray", "3,2")
-    .attr("pointer-events", "none");
 
   cells
     .append("text")
@@ -190,6 +195,7 @@ export function render(rows, options) {
 
   if (gradient) {
     const gradientId = `legend-${state.report}`;
+    const filterableCells = cells.filter((d) => !specialStateFor(d.estado_bloque));
     renderGradientLegend(svg, {
       colorScale: gradient.colorAt,
       domain: gradient.domain,
@@ -198,18 +204,9 @@ export function render(rows, options) {
       width,
       chartHeight,
       gradientId,
-      onHover: (hoverValue) => {
+      onScrub: (value) => {
         const span = gradient.domain[1] - gradient.domain[0];
-        cells
-          .select("rect")
-          .transition()
-          .duration(120)
-          .attr("fill-opacity", (d) =>
-            specialStateFor(d.estado_bloque) ? 1 : computeHoverOpacity(d[config.valueKey], hoverValue, span),
-          );
-      },
-      onHoverEnd: () => {
-        cells.select("rect").transition().duration(120).attr("fill-opacity", 1);
+        filterableCells.select("rect").attr("fill-opacity", (d) => computeHoverOpacity(d[config.valueKey], value, span));
       },
     });
   }
