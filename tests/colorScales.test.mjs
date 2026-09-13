@@ -16,7 +16,7 @@ const {
   buildEmpiricalGradient,
   reportConfig,
   FALLBACK_COLOR,
-} = await import("../src/colorScales.js");
+} = await import("../src/modules/web/pages/heatmap/colorScales.js");
 
 test("specialStateFor resuelve eventos_cliente como Caída Total", () => {
   const special = specialStateFor("eventos_cliente");
