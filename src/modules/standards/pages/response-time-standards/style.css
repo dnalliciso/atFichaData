@@ -1,11 +1,315 @@
 /* Overrides específicos de "Estándares internacionales de tiempo de
-   respuesta": separa visualmente las dos tablas (una por fuente). */
-.report-surface h3 {
-  margin: var(--space-4) 0 var(--space-2);
-  font-size: 1rem;
-  color: var(--navy);
+   respuesta". Importante: como ensurePageStyle() inyecta este CSS de
+   forma global (no hay scoping por página todavía), todas las clases de
+   acá van prefijadas .rt-* para no pisar nada de otras páginas (mismo
+   criterio que ya usan Niveles de tolerancia de disponibilidad). */
+
+:root {
+  /* Paleta de estado (Bueno/Tolerada/Frustrada): fija, no se tematiza —
+     mismos tonos que Niveles de tolerancia de disponibilidad, redefinidos
+     acá porque cada página mantiene su propio CSS independiente. */
+  --rt-good: #0ca30c;
+  --rt-warning: #fab219;
+  --rt-critical: #d03b3b;
 }
 
-.report-surface h3:first-of-type {
-  margin-top: var(--space-3);
+.rt-heading-main {
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.rt-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--panel-alt);
+  color: var(--accent);
+}
+
+/* Especificidad extra (.section-heading .rt-subtitle) a propósito: la
+   regla genérica ".section-heading p" (base.css) pone mayúsculas/negrita/
+   violeta para el kicker, y por especificidad de selector le gana a una
+   clase sola — sin el prefijo del padre, este subtítulo salía con ese
+   mismo estilo de kicker en vez de texto de cuerpo normal. */
+.section-heading .rt-subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  max-width: 78ch;
+}
+
+.rt-cards {
+  display: grid;
+  /* min(420px, 100%) en vez de 420px seco: un track de grid nunca se
+     encoge por debajo de su mínimo aunque el contenedor sea más angosto
+     — con 420px fijo, una pantalla de ~375px quedaba con el grid más
+     ancho que el viewport y el sobrante se recortaba en silencio
+     (body tiene overflow-x:hidden). Con min(), el piso baja con el
+     contenedor y nunca lo supera. */
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.rt-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+  /* .rt-zone-row más abajo cambia de layout por ancho de ESTA tarjeta
+     (@container), no del viewport — .rt-cards pone 2 tarjetas lado a
+     lado desde ~840px de viewport, y ahí cada tarjeta anda por los
+     400-450px: angosta para su propio contenido aunque el viewport sea
+     "de escritorio". Un @media por viewport no se enteraba de eso (a
+     900px de viewport nunca entraba en el breakpoint mobile) y la fila
+     de zona quedaba más angosta que su propio mínimo — como este overflow
+     quedaba adentro de una tarjeta con overflow:hidden, no se notaba ni
+     siquiera comparando scrollWidth de la página contra el viewport. */
+  container-type: inline-size;
+  container-name: rt-card;
+}
+
+.rt-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.rt-card-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.rt-card-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.rt-card-brand h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.1rem;
+}
+
+.rt-card-brand span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.rt-threshold {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 150px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.rt-threshold-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.rt-threshold-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.rt-zone-head {
+  display: grid;
+  grid-template-columns: 44px minmax(160px, 1.1fr) 130px minmax(180px, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rt-zone-head span:nth-child(1) {
+  grid-column: 1 / 3;
+}
+
+.rt-zone-row {
+  display: grid;
+  grid-template-columns: 44px minmax(160px, 1.1fr) 130px minmax(180px, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  margin: 0 var(--space-3) var(--space-2);
+  padding: var(--space-3);
+  border-radius: 10px;
+}
+
+.rt-zone-row:last-child {
+  margin-bottom: var(--space-3);
+}
+
+.rt-zone-row--good {
+  background: color-mix(in srgb, var(--rt-good) 10%, var(--panel));
+}
+
+.rt-zone-row--warning {
+  background: color-mix(in srgb, var(--rt-warning) 12%, var(--panel));
+}
+
+.rt-zone-row--critical {
+  background: color-mix(in srgb, var(--rt-critical) 10%, var(--panel));
+}
+
+.rt-zone-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.rt-zone-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rt-zone-text strong {
+  color: var(--navy);
+  font-size: 0.92rem;
+}
+
+.rt-zone-text span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.rt-zone-range {
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.rt-zone-viz {
+  min-width: 0;
+}
+
+.rt-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--panel-alt);
+}
+
+.rt-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.rt-fill--good {
+  background: var(--rt-good);
+}
+
+.rt-fill--warning {
+  background: var(--rt-warning);
+}
+
+.rt-fill--critical {
+  background: var(--rt-critical);
+}
+
+.rt-tick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 14px;
+  background: var(--muted);
+  opacity: 0.5;
+}
+
+.rt-tick-labels {
+  position: relative;
+  height: 16px;
+  margin-top: var(--space-1);
+}
+
+.rt-tick-labels span {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rt-tick-labels span:first-child {
+  transform: translateX(0);
+}
+
+/* 44+160+130+180 + 3 gaps de 12px = 550px mínimo de columnas, más el
+   padding (24px) y el margin (24px) horizontales de .rt-zone-row = 598px
+   de ancho de TARJETA necesarios para que la fila "ancha" entre sin
+   apretarse. 620 le deja un colchón chico. Pasar por alto el padding/
+   margin de la fila (y quedarse solo con el mínimo de columnas) fue
+   exactamente lo que dejó ~14px de overflow real, silenciado por el
+   overflow:hidden de .rt-card, en la franja 620-640px de ancho de
+   tarjeta — no se veía como overflow de página, pero cortaba texto. */
+@container rt-card (max-width: 620px) {
+  .rt-zone-head {
+    display: none;
+  }
+
+  .rt-zone-row {
+    grid-template-columns: 36px 1fr;
+    grid-template-areas:
+      "icon text"
+      "icon range"
+      "viz viz";
+    row-gap: var(--space-1);
+  }
+
+  .rt-zone-icon {
+    grid-area: icon;
+  }
+
+  .rt-zone-text {
+    grid-area: text;
+  }
+
+  .rt-zone-range {
+    grid-area: range;
+  }
+
+  .rt-zone-viz {
+    grid-area: viz;
+    margin-top: var(--space-1);
+  }
+
+  .rt-threshold {
+    min-width: 0;
+  }
 }

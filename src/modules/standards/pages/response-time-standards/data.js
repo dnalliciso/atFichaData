@@ -1,27 +1,51 @@
 // Valores ilustrativos por defecto. AWS Apdex usa la metodología real
-// (umbral T configurable, acá 0.5s como ejemplo); los de Google quedan
-// pendientes de confirmar la fuente exacta (¿Core Web Vitals?) — ver
-// docs/superpowers/specs/2026-09-13-modular-architecture-design.md §2.
+// (umbral T configurable, acá 2s como ejemplo); los de Google reflejan el
+// estándar de referencia entregado por el cliente
+// (dataExample/ejemplos/estandaresinternacionaes.png), pendientes de
+// confirmar contra la fuente oficial — ver docs/superpowers/specs/
+// 2026-09-13-modular-architecture-design.md §2.
+//
+// Cada fuente define solo T (umbral "bueno") y U (techo de "tolerada");
+// las 3 zonas (Satisfecha/Tolerada/Frustrada) son el mismo marco Apdex
+// para ambas y se derivan en index.page.js a partir de T y U.
 const STANDARDS = [
   {
-    source: "AWS Apdex",
-    thresholdLabel: "Umbral por defecto (T)",
-    thresholdValue: "T = 0.5s",
-    zones: [
-      { label: "Zona satisfecha / bueno", range: "≤ T (≤ 0.5s)" },
-      { label: "Zona tolerada / necesita mejora", range: "T – 4T (0.5s – 2s)" },
-      { label: "Zona frustrada / pobre", range: "> 4T (> 2s)" },
-    ],
+    id: "aws",
+    source: "AWS (Apdex)",
+    subtitle: "Estándares de tiempo de respuesta",
+    badge: "AWS",
+    accentColor: "#e8890c",
+    threshold: 2,
+    upper: 8,
+    unit: "s",
   },
   {
+    id: "google",
     source: "Google",
-    thresholdLabel: "Umbral por defecto (T)",
-    thresholdValue: "Pendiente de confirmar",
-    zones: [
-      { label: "Zona satisfecha / bueno", range: "Pendiente" },
-      { label: "Zona tolerada / necesita mejora", range: "Pendiente" },
-      { label: "Zona frustrada / pobre", range: "Pendiente" },
-    ],
+    subtitle: "Estándares de tiempo de respuesta",
+    badge: "G",
+    accentColor: "#4285f4",
+    threshold: 2.5,
+    upper: 4,
+    unit: "s",
+  },
+];
+
+export const ZONES = [
+  {
+    id: "good",
+    label: "Satisfecha / Bueno",
+    description: "Respuesta rápida y satisfactoria",
+  },
+  {
+    id: "warning",
+    label: "Tolerada / Necesita mejora",
+    description: "Respuesta aceptable, pero puede mejorar",
+  },
+  {
+    id: "critical",
+    label: "Frustrada / Pobre",
+    description: "Respuesta lenta e insatisfactoria",
   },
 ];
 

@@ -1,11 +1,333 @@
 /* Overrides específicos de "Niveles de tolerancia de disponibilidad".
    Importante: como ensurePageStyle() inyecta este CSS de forma global (no
-   hay scoping por página todavía), NO se puede pisar la clase genérica
-   .data-table directamente — eso se filtraría a cualquier otra página que
-   la reuse (ej. Estándares de tiempo de respuesta). Por eso esta regla
-   apunta a .data-table--tolerance-levels, una clase extra que solo pone
-   esta página en su propia tabla. */
-.data-table--tolerance-levels td:not(:first-child) {
-  text-align: right;
+   hay scoping por página todavía), todas las clases de acá van prefijadas
+   .tolerance-* para no pisar nada de otras páginas (ver mismo comentario
+   histórico en esta página y en Estándares de tiempo de respuesta). */
+
+:root {
+  /* Paleta de estado (Bueno/Aceptable/Deficiente): fija, no se tematiza —
+     son los mismos tonos en claro y oscuro (semántica de estado, no de
+     marca). Los tonos "-ink" son variantes más oscuras/claras pensadas
+     para texto, porque el verde/ámbar/rojo de referencia no da contraste
+     suficiente para texto pequeño sobre el panel (el ámbar en particular
+     queda por debajo de 2:1 en fondo claro). */
+  --tol-good: #0ca30c;
+  --tol-warning: #fab219;
+  --tol-critical: #d03b3b;
+  --tol-good-ink: #157a2e;
+  --tol-warning-ink: #8a6100;
+  --tol-critical-ink: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tol-good-ink: #4ad06a;
+    --tol-warning-ink: #ffcf66;
+    --tol-critical-ink: #ff9a90;
+  }
+}
+
+:root[data-theme="dark"] {
+  --tol-good-ink: #4ad06a;
+  --tol-warning-ink: #ffcf66;
+  --tol-critical-ink: #ff9a90;
+}
+
+.tolerance-heading-main {
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.tolerance-heading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--panel-alt);
+  color: var(--accent);
+}
+
+/* Especificidad extra (.section-heading .tolerance-subtitle) a propósito:
+   la regla genérica ".section-heading p" (base.css) pone mayúsculas/
+   negrita/violeta para el kicker, y por especificidad de selector le gana
+   a una clase sola — sin el prefijo del padre, este subtítulo salía con
+   ese mismo estilo de kicker en vez de texto de cuerpo normal. */
+.section-heading .tolerance-subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  max-width: 52ch;
+}
+
+.tolerance-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tolerance-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.tolerance-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tolerance-dot--good {
+  background: var(--tol-good);
+}
+
+.tolerance-dot--warning {
+  background: var(--tol-warning);
+}
+
+.tolerance-dot--critical {
+  background: var(--tol-critical);
+}
+
+.tolerance-matrix-wrap {
+  overflow-x: auto;
+  /* Sin esto, en Chrome/Edge el scrollbar solo aparece durante el gesto
+     de scroll (overlay del SO) — al llegar recortado por el ancho de la
+     ventana, el usuario ve las celdas de Nivel 3 cortadas a la mitad sin
+     ninguna pista de que el bloque se puede desplazar. Con el pseudo-
+     elemento queda una barra fina siempre visible cuando hay overflow
+     real (si no hay overflow, el navegador no la dibuja). */
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.tolerance-matrix-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tolerance-matrix-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tolerance-matrix-wrap::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.tolerance-matrix {
+  display: grid;
+  /* Nivel a 230px mínimo (no 200px): a 200px, "90% - 95%" (el rango de
+     Aceptable, el más largo de los tres) envolvía a 2 líneas mientras
+     "Deficiente"/"Bueno" quedaban en 1 — misma fila, alturas distintas,
+     parecía desalineado. 230px le da lugar a las 3 etiquetas en una
+     sola línea siempre (ver white-space:nowrap más abajo). */
+  grid-template-columns: minmax(160px, 220px) repeat(3, minmax(230px, 1fr));
+  gap: var(--space-3);
+  min-width: 900px;
+}
+
+.tolerance-matrix-spacer {
+  min-width: 0;
+}
+
+.tolerance-criticidad-bar {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 12%, var(--panel-alt)),
+    color-mix(in srgb, var(--accent) 45%, var(--panel-alt))
+  );
+  color: var(--navy);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.tolerance-corner,
+.tolerance-level-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: 10px;
+}
+
+.tolerance-corner {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: transparent;
+}
+
+.tolerance-level-header strong {
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.tolerance-level-header span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tolerance-level-header--1 {
+  background: var(--panel-alt);
+}
+
+.tolerance-level-header--2 {
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-alt));
+}
+
+.tolerance-level-header--3 {
+  background: color-mix(in srgb, var(--accent) 22%, var(--panel-alt));
+}
+
+.tolerance-period {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border-radius: 10px;
+  background: var(--panel-alt);
+}
+
+.tolerance-period-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.tolerance-period div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tolerance-period strong {
+  color: var(--navy);
+  font-size: 0.92rem;
+}
+
+.tolerance-period span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.tolerance-cell {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.tolerance-cell-heading {
+  margin: 0;
+  text-align: center;
+  color: var(--tol-good-ink);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.tolerance-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--panel-alt);
+}
+
+.tolerance-seg {
+  flex: 1 1 0;
+}
+
+.tolerance-seg--critical {
+  background: var(--tol-critical);
+}
+
+.tolerance-seg--warning {
+  background: var(--tol-warning);
+}
+
+.tolerance-seg--good {
+  background: var(--tol-good);
+}
+
+.tolerance-cell-labels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.tolerance-cell-label strong {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.tolerance-cell-label span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
+  /* "90% - 95%" es el más largo de los tres rangos — sin nowrap
+     envolvía a 2 líneas mientras los otros dos quedaban en 1, y la fila
+     (misma altura de grid para los tres) los dejaba desalineados
+     verticalmente. El ancho mínimo de columna (ver .tolerance-matrix) ya
+     le da lugar de sobra a las 3 etiquetas en una sola línea. */
+  white-space: nowrap;
+}
+
+.tolerance-cell-label--critical strong {
+  color: var(--tol-critical-ink);
+}
+
+.tolerance-cell-label--warning strong {
+  color: var(--tol-warning-ink);
+}
+
+.tolerance-cell-label--good strong {
+  color: var(--tol-good-ink);
+}
+
+.tolerance-note {
+  margin-top: var(--space-3);
+  text-align: left;
+}
+
+@media (max-width: 980px) {
+  .tolerance-heading-main {
+    flex-direction: row;
+  }
+
+  .tolerance-legend {
+    gap: var(--space-3);
+  }
 }
