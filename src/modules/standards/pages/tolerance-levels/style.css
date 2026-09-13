@@ -1,8 +1,11 @@
 /* Overrides específicos de "Niveles de tolerancia de disponibilidad".
-   Alinea a la derecha las columnas numéricas de la tabla genérica
-   .data-table (definida en src/styles/base.css) — demuestra el mecanismo
-   de override por página aunque hoy sea la única regla necesaria. */
-.data-table td:not(:first-child) {
+   Importante: como ensurePageStyle() inyecta este CSS de forma global (no
+   hay scoping por página todavía), NO se puede pisar la clase genérica
+   .data-table directamente — eso se filtraría a cualquier otra página que
+   la reuse (ej. Estándares de tiempo de respuesta). Por eso esta regla
+   apunta a .data-table--tolerance-levels, una clase extra que solo pone
+   esta página en su propia tabla. */
+.data-table--tolerance-levels td:not(:first-child) {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }

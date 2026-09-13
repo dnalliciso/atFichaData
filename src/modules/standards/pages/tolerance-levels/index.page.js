@@ -35,7 +35,7 @@ export function mount(container) {
 
   loadDefault().then((rows) => {
     body.innerHTML = `
-      <table class="data-table">
+      <table class="data-table data-table--tolerance-levels">
         <thead>
           <tr>
             <th>Período</th>

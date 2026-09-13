@@ -70,6 +70,14 @@
   pointer-events: none;
 }
 
+.detail-grid > * {
+  /* Sin esto, el grid item que envuelve el gráfico de detalle horario no
+     se encoge por debajo del ancho intrínseco de su SVG (~680px) — pese a
+     que .chart-wrap tiene overflow-x:auto, el item entero empujaba el
+     grid y con él la página completa a lo ancho. */
+  min-width: 0;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
