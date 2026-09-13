@@ -1,0 +1,8 @@
+/* Overrides específicos de "Niveles de tolerancia de disponibilidad".
+   Alinea a la derecha las columnas numéricas de la tabla genérica
+   .data-table (definida en src/styles/base.css) — demuestra el mecanismo
+   de override por página aunque hoy sea la única regla necesaria. */
+.data-table td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
