@@ -1,35 +1,11 @@
-import { loadWorkbookFromUrl, loadWorkbookFromFile, dateKey, formatDate } from "./data.js";
-import { state, getFilteredRows, defaultMonthRange } from "./state.js";
-import { reportConfig, average } from "./colorScales.js";
-import { renderCategoryLegend } from "./legend.js";
-import * as heatmapMain from "./heatmapMain.js";
-import * as heatmapHourly from "./heatmapHourly.js";
-import * as eventsPanel from "./events.js";
-
-const DEFAULT_WORKBOOK = "./dataExample/Heatmap_objetivo.xlsx";
+import { modules } from "./modules/registry.js";
+import { navState, onNavigate, setActivePage } from "./core/router.js";
 
 const els = {
-  objectiveName: document.querySelector("#objectiveName"),
-  dateRange: document.querySelector("#dateRange"),
-  availabilityAvg: document.querySelector("#availabilityAvg"),
-  responseAvg: document.querySelector("#responseAvg"),
-  objectiveSelect: document.querySelector("#objectiveSelect"),
-  dateFromInput: document.querySelector("#dateFromInput"),
-  dateToInput: document.querySelector("#dateToInput"),
-  heatmap: document.querySelector("#heatmap"),
-  hourlyHeatmap: document.querySelector("#hourlyHeatmap"),
-  detailTitle: document.querySelector("#detailTitle"),
-  eventsList: document.querySelector("#eventsList"),
-  reportKicker: document.querySelector("#reportKicker"),
-  reportTitle: document.querySelector("#reportTitle"),
-  reportSubtitle: document.querySelector("#reportSubtitle"),
-  legend: document.querySelector("#legend"),
-  errorBox: document.querySelector("#errorBox"),
-  tooltip: document.querySelector("#tooltip"),
-  fileInput: document.querySelector("#fileInput"),
-  fileTrigger: document.querySelector("#fileTrigger"),
-  fileName: document.querySelector("#fileName"),
   themeToggle: document.querySelector("#themeToggle"),
+  moduleTabs: document.querySelector("#moduleTabs"),
+  pageTabs: document.querySelector("#pageTabs"),
+  pageContainer: document.querySelector("#pageContainer"),
 };
 
 const THEME_STORAGE_KEY = "atficha-theme";
@@ -65,147 +41,66 @@ els.themeToggle.addEventListener("click", () => {
 
 initTheme();
 
-els.fileTrigger.addEventListener("click", () => els.fileInput.click());
+let currentUnmount = null;
 
-function showError(message) {
-  els.errorBox.hidden = false;
-  els.errorBox.textContent = message;
+function findModule(moduleId) {
+  return modules.find((module) => module.id === moduleId);
 }
 
-function clearError() {
-  els.errorBox.hidden = true;
-  els.errorBox.textContent = "";
+function findPage(module, pageId) {
+  return module.pages.find((page) => page.id === pageId);
 }
 
-function setRows(rows) {
-  if (!rows.length) {
-    showError("El Excel no tiene filas válidas para la hoja Heatmap.");
-    return;
-  }
-  state.rows = rows;
-  const objectives = Array.from(new Set(rows.map((row) => row.objetivo))).sort();
-  state.objective = objectives[0];
-  state.dateFrom = "";
-  state.dateTo = "";
-  state.selectedDayKey = "";
-  populateFilters();
-  render();
-}
-
-function populateFilters() {
-  const objectives = Array.from(new Set(state.rows.map((row) => row.objetivo))).sort();
-  els.objectiveSelect.innerHTML = objectives
-    .map((objective) => `<option value="${objective}">${objective}</option>`)
+function renderModuleTabs() {
+  els.moduleTabs.innerHTML = modules
+    .map(
+      (module) => `
+        <button type="button" class="tab-button${module.id === navState.moduleId ? " active" : ""}" data-module="${module.id}">
+          ${module.label}
+        </button>
+      `,
+    )
     .join("");
-  els.objectiveSelect.value = state.objective;
 
-  if (!state.dateFrom || !state.dateTo) {
-    const range = defaultMonthRange(getFilteredRows(false));
-    state.dateFrom = range.from;
-    state.dateTo = range.to;
-  }
-  els.dateFromInput.value = state.dateFrom;
-  els.dateToInput.value = state.dateTo;
+  els.moduleTabs.querySelectorAll("[data-module]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const module = findModule(button.dataset.module);
+      setActivePage(module.id, module.pages[0].id);
+    });
+  });
 }
 
-function updateSummary(rows) {
-  const dates = rows.map((row) => row.fecha).filter(Boolean);
-  const minDate = d3.min(dates);
-  const maxDate = d3.max(dates);
-  const availability = average(rows.map((row) => row.disponibilidad));
-  const response = average(rows.map((row) => row.tiempo));
+function renderPageTabs(module) {
+  els.pageTabs.innerHTML = module.pages
+    .map(
+      (page) => `
+        <button type="button" class="tab-button${page.id === navState.pageId ? " active" : ""}" data-page="${page.id}">
+          ${page.label}
+        </button>
+      `,
+    )
+    .join("");
 
-  els.objectiveName.textContent = state.objective || "-";
-  els.dateRange.textContent = minDate && maxDate ? `${formatDate(minDate)} - ${formatDate(maxDate)}` : "-";
-  els.availabilityAvg.textContent = availability == null ? "-" : `${availability.toFixed(3)}%`;
-  els.responseAvg.textContent = response == null ? "-" : `${response.toFixed(2)}s`;
+  els.pageTabs.querySelectorAll("[data-page]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setActivePage(module.id, button.dataset.page);
+    });
+  });
 }
 
-function render() {
-  clearError();
-  const rows = getFilteredRows(true);
-  updateSummary(rows);
+function renderActivePage() {
+  const module = findModule(navState.moduleId);
+  const pageEntry = findPage(module, navState.pageId);
 
-  const config = reportConfig[state.report];
-  const dates = rows.map((row) => row.fecha).filter(Boolean);
-  const years = Array.from(new Set(dates.map((date) => date.getFullYear()))).sort();
-  const yearLabel = years.length === 1 ? years[0] : years.join("-");
+  renderModuleTabs();
+  renderPageTabs(module);
 
-  els.reportKicker.textContent = config.kicker;
-  els.reportTitle.textContent = `${config.kicker} — ${yearLabel || "período"}`;
-  els.reportSubtitle.textContent =
-    state.report === "availability"
-      ? "Eje X: hora del día. Eje Y: día del período. Cada celda muestra disponibilidad."
-      : "Eje X: hora del día. Eje Y: día del período. Cada celda muestra tiempo de respuesta.";
-
-  renderCategoryLegend(els.legend);
-
-  heatmapMain.render(rows, {
-    heatmapEl: els.heatmap,
-    tooltipEl: els.tooltip,
-    state,
-    onDaySelected: (dayKey) => {
-      state.selectedDayKey = dayKey;
-      render();
-    },
-  });
-
-  const fallbackDayKey = rows[0] ? dateKey(rows[0].fecha) : null;
-  const selectedDayKey = state.selectedDayKey || fallbackDayKey;
-  const dayRows = selectedDayKey ? rows.filter((row) => dateKey(row.fecha) === selectedDayKey) : [];
-  heatmapHourly.render(dayRows, {
-    hourlyEl: els.hourlyHeatmap,
-    detailTitleEl: els.detailTitle,
-    tooltipEl: els.tooltip,
-    state,
-  });
-
-  eventsPanel.render(rows, els.eventsList);
+  currentUnmount?.();
+  const result = pageEntry.page.mount(els.pageContainer);
+  currentUnmount = result?.unmount ?? null;
 }
 
-document.querySelectorAll("[data-report]").forEach((button) => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll("[data-report]").forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-    state.report = button.dataset.report;
-    render();
-  });
-});
+onNavigate(renderActivePage);
 
-els.objectiveSelect.addEventListener("change", () => {
-  state.objective = els.objectiveSelect.value;
-  state.dateFrom = "";
-  state.dateTo = "";
-  state.selectedDayKey = "";
-  populateFilters();
-  render();
-});
-
-els.dateFromInput.addEventListener("change", () => {
-  state.dateFrom = els.dateFromInput.value;
-  state.selectedDayKey = "";
-  render();
-});
-
-els.dateToInput.addEventListener("change", () => {
-  state.dateTo = els.dateToInput.value;
-  state.selectedDayKey = "";
-  render();
-});
-
-els.fileInput.addEventListener("change", async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  els.fileName.textContent = file.name;
-  try {
-    clearError();
-    const rows = await loadWorkbookFromFile(file);
-    setRows(rows);
-  } catch (error) {
-    showError(error.message);
-  }
-});
-
-loadWorkbookFromUrl(DEFAULT_WORKBOOK)
-  .then(setRows)
-  .catch((error) => showError(error.message));
+const firstModule = modules[0];
+setActivePage(firstModule.id, firstModule.pages[0].id);

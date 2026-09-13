@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Informes Heatmap</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>Panel de informes — Atentus</title>
+    <link rel="stylesheet" href="./src/styles/base.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div>
           <p class="eyebrow">Informes interactivos</p>
-          <h1>Disponibilidad y tiempo de respuesta</h1>
+          <h1>Panel de informes</h1>
         </div>
         <div class="topbar-actions">
           <button
@@ -22,97 +22,13 @@
           >
             <span aria-hidden="true">🌙</span>
           </button>
-          <div class="file-control">
-            <span class="file-control-label">Excel</span>
-            <button type="button" id="fileTrigger" class="file-trigger">Elegir archivo</button>
-            <span id="fileName" class="file-name">Heatmap_objetivo.xlsx (ejemplo)</span>
-            <input id="fileInput" type="file" accept=".xlsx,.xls" hidden />
-          </div>
         </div>
       </header>
 
-      <section class="summary-strip" aria-label="Resumen">
-        <article>
-          <span>Objetivo</span>
-          <strong id="objectiveName">Cargando...</strong>
-        </article>
-        <article>
-          <span>Rango</span>
-          <strong id="dateRange">-</strong>
-        </article>
-        <article>
-          <span>Disponibilidad promedio</span>
-          <strong id="availabilityAvg">-</strong>
-        </article>
-        <article>
-          <span>Respuesta promedio</span>
-          <strong id="responseAvg">-</strong>
-        </article>
-      </section>
+      <nav id="moduleTabs" class="module-tabs" aria-label="Módulos"></nav>
+      <nav id="pageTabs" class="page-tabs" aria-label="Páginas"></nav>
 
-      <section class="workspace">
-        <aside class="controls-panel" aria-label="Controles">
-          <div class="control-group">
-            <span class="control-label">Informe</span>
-            <div class="segmented" role="tablist" aria-label="Tipo de informe">
-              <button class="segment active" data-report="availability" type="button">Disponibilidad</button>
-              <button class="segment" data-report="response" type="button">Respuesta</button>
-            </div>
-          </div>
-
-          <label class="control-group">
-            <span class="control-label">Objetivo</span>
-            <select id="objectiveSelect"></select>
-          </label>
-
-          <div class="control-group">
-            <span class="control-label">Período</span>
-            <div class="date-range">
-              <input id="dateFromInput" type="date" aria-label="Desde" />
-              <span class="date-range-sep">–</span>
-              <input id="dateToInput" type="date" aria-label="Hasta" />
-            </div>
-          </div>
-
-          <div class="legend" id="legend"></div>
-        </aside>
-
-        <section class="report-surface">
-          <div class="section-heading">
-            <div>
-              <p id="reportKicker">Disponibilidad global</p>
-              <h2 id="reportTitle">Heatmap hora / día</h2>
-            </div>
-            <div class="chart-actions">
-              <p id="reportSubtitle"></p>
-            </div>
-          </div>
-
-          <div id="errorBox" class="error-box" hidden></div>
-          <div id="heatmap" class="chart-wrap" aria-label="Heatmap principal"></div>
-
-          <div class="detail-grid">
-            <section>
-              <div class="section-heading compact">
-                <div>
-                  <p>Detalle</p>
-                  <h2 id="detailTitle">Selecciona un día</h2>
-                </div>
-              </div>
-              <div id="hourlyHeatmap" class="chart-wrap small" aria-label="Detalle horario"></div>
-            </section>
-            <section class="records-panel">
-              <div class="section-heading compact">
-                <div>
-                  <p>Eventos</p>
-                  <h2>Bloques marcados</h2>
-                </div>
-              </div>
-              <div id="eventsList" class="events-list"></div>
-            </section>
-          </div>
-        </section>
-      </section>
+      <section id="pageContainer"></section>
     </main>
 
     <div id="tooltip" class="tooltip" hidden></div>
