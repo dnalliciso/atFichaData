@@ -110,7 +110,16 @@ const TEMPLATE = `
   </section>
 `;
 
+// Identifica el mount() "vigente": si el usuario navega a otra página
+// mientras loadDefault()/loadFromFile() todavía está en vuelo, la promesa
+// que resuelve tarde no debe escribir sobre el DOM de un mount() anterior
+// que ya fue reemplazado por container.innerHTML en el mount() siguiente.
+let activeMountToken = 0;
+
 export function mount(container) {
+  const mountToken = ++activeMountToken;
+  const isStale = () => mountToken !== activeMountToken;
+
   container.innerHTML = TEMPLATE;
 
   const els = {};
@@ -149,6 +158,7 @@ export function mount(container) {
     }
     els.dateFromInput.value = state.dateFrom;
     els.dateToInput.value = state.dateTo;
+    els.fileName.textContent = state.fileName;
   }
 
   function updateSummary(rows) {
@@ -168,6 +178,10 @@ export function mount(container) {
     clearError(els.errorBox);
     const rows = getFilteredRows(true);
     updateSummary(rows);
+
+    container.querySelectorAll("[data-report]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.report === state.report);
+    });
 
     const config = reportConfig[state.report];
     const dates = rows.map((row) => row.fecha).filter(Boolean);
@@ -208,8 +222,6 @@ export function mount(container) {
 
   container.querySelectorAll("[data-report]").forEach((button) => {
     button.addEventListener("click", () => {
-      container.querySelectorAll("[data-report]").forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
       state.report = button.dataset.report;
       render();
     });
@@ -245,13 +257,31 @@ export function mount(container) {
     try {
       clearError(els.errorBox);
       const rows = await loadFromFile(file);
+      if (isStale()) return;
+      state.fileName = file.name;
       setRows(rows);
     } catch (error) {
+      if (isStale()) return;
       showError(els.errorBox, error.message);
     }
   });
 
+  // Si ya hay datos cargados (el usuario navegó a otra página y volvió),
+  // no hace falta re-pedir el Excel ni resetear objetivo/rango/día
+  // seleccionado — solo re-pintar con el estado que ya tenía.
+  if (state.rows.length) {
+    populateFilters();
+    render();
+    return;
+  }
+
   loadDefault()
-    .then(setRows)
-    .catch((error) => showError(els.errorBox, error.message));
+    .then((rows) => {
+      if (isStale()) return;
+      setRows(rows);
+    })
+    .catch((error) => {
+      if (isStale()) return;
+      showError(els.errorBox, error.message);
+    });
 }

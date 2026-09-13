@@ -15,6 +15,14 @@ const LEVEL_LABELS = {
   nivel3: "Nivel 3 — Misión crítica",
 };
 
+// loadDefault() hoy devuelve valores embebidos siempre completos, pero su
+// contrato (ver README de esta página) es quedar listo para un fetch a la
+// API del cliente más adelante — un campo faltante en esa respuesta futura
+// no debería tirar abajo toda la página.
+function formatPercent(value) {
+  return Number.isFinite(value) ? `${value.toFixed(2)}%` : "-";
+}
+
 export function mount(container) {
   container.innerHTML = `
     <section class="report-surface">
@@ -49,10 +57,10 @@ export function mount(container) {
             .map(
               (row) => `
                 <tr>
-                  <td>${row.period}</td>
-                  <td>${row.nivel1.toFixed(2)}%</td>
-                  <td>${row.nivel2.toFixed(2)}%</td>
-                  <td>${row.nivel3.toFixed(2)}%</td>
+                  <td>${row.period ?? "-"}</td>
+                  <td>${formatPercent(row.nivel1)}</td>
+                  <td>${formatPercent(row.nivel2)}</td>
+                  <td>${formatPercent(row.nivel3)}</td>
                 </tr>
               `,
             )

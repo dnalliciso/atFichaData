@@ -1,3 +1,7 @@
+// Re-exportado tal cual — mismo formatValue que usa shared/legend.js, sin
+// duplicar la implementación (ver src/core/format.js).
+export { formatValue } from "../../../../core/format.js";
+
 // El color de cada celda viene calculado por fila en el propio Excel
 // (columnas color_disp / color_tiempo) — no se recalcula acá, se respeta
 // tal cual, para ambos reportes.
@@ -42,11 +46,6 @@ export const reportConfig = {
 export function average(values) {
   const clean = values.filter(Number.isFinite);
   return clean.length ? d3.mean(clean) : null;
-}
-
-export function formatValue(value, config) {
-  if (!Number.isFinite(value)) return "-";
-  return `${value.toFixed(config.decimals)}${config.unit}`;
 }
 
 export function compactCellLabel(value, config) {

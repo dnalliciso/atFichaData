@@ -1,3 +1,5 @@
+import { dateKey } from "../../../../core/excel.js";
+
 export const MONTH_ORDER = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 export const state = {
@@ -7,6 +9,7 @@ export const state = {
   dateFrom: "",
   dateTo: "",
   selectedDayKey: "",
+  fileName: "Heatmap_objetivo.xlsx (ejemplo)",
 };
 
 export function normalizeText(value) {
@@ -26,19 +29,11 @@ export function getFilteredRows(applyDateRange = false) {
   return state.rows.filter((row) => {
     if (row.objetivo !== state.objective) return false;
     if (!applyDateRange) return true;
-    const key = dateKeyOf(row.fecha);
+    const key = dateKey(row.fecha);
     if (state.dateFrom && key < state.dateFrom) return false;
     if (state.dateTo && key > state.dateTo) return false;
     return true;
   });
-}
-
-function dateKeyOf(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
 }
 
 // Rango del primer mes calendario completo presente en las filas del
@@ -49,7 +44,7 @@ export function defaultMonthRange(rows) {
   const first = dates[0];
   const year = first.getFullYear();
   const month = first.getMonth();
-  const from = dateKeyOf(new Date(year, month, 1));
-  const to = dateKeyOf(new Date(year, month + 1, 0));
+  const from = dateKey(new Date(year, month, 1));
+  const to = dateKey(new Date(year, month + 1, 0));
   return { from, to };
 }

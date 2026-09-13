@@ -38,14 +38,14 @@ export function mount(container) {
       ${sources
         .map(
           (source) => `
-            <h3>${source.source} — ${source.thresholdLabel}: ${source.thresholdValue}</h3>
+            <h3>${source.source ?? "-"} — ${source.thresholdLabel ?? "-"}: ${source.thresholdValue ?? "-"}</h3>
             <table class="data-table">
               <thead>
                 <tr><th>Zona</th><th>Rango</th></tr>
               </thead>
               <tbody>
-                ${source.zones
-                  .map((zone) => `<tr><td>${zone.label}</td><td>${zone.range}</td></tr>`)
+                ${(source.zones ?? [])
+                  .map((zone) => `<tr><td>${zone.label ?? "-"}</td><td>${zone.range ?? "-"}</td></tr>`)
                   .join("")}
               </tbody>
             </table>

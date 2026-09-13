@@ -1,7 +1,4 @@
-function formatValue(value, config) {
-  if (!Number.isFinite(value)) return "-";
-  return `${value.toFixed(config.decimals)}${config.unit}`;
-}
+import { formatValue } from "../core/format.js";
 
 export function renderCategoryLegend(container, items) {
   container.innerHTML = items
