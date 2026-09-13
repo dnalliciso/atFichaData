@@ -25,8 +25,16 @@
         </div>
       </header>
 
-      <nav id="moduleTabs" class="module-tabs" aria-label="Módulos"></nav>
-      <nav id="pageTabs" class="page-tabs" aria-label="Páginas"></nav>
+      <div class="tab-scroller tab-scroller--modules" id="moduleTabsScroller">
+        <button type="button" class="tab-scroll-arrow tab-scroll-arrow--start" aria-label="Desplazar módulos a la izquierda" hidden>‹</button>
+        <nav id="moduleTabs" class="module-tabs" aria-label="Módulos" role="tablist"></nav>
+        <button type="button" class="tab-scroll-arrow tab-scroll-arrow--end" aria-label="Desplazar módulos a la derecha" hidden>›</button>
+      </div>
+      <div class="tab-scroller" id="pageTabsScroller">
+        <button type="button" class="tab-scroll-arrow tab-scroll-arrow--start" aria-label="Desplazar páginas a la izquierda" hidden>‹</button>
+        <nav id="pageTabs" class="page-tabs" aria-label="Páginas" role="tablist"></nav>
+        <button type="button" class="tab-scroll-arrow tab-scroll-arrow--end" aria-label="Desplazar páginas a la derecha" hidden>›</button>
+      </div>
 
       <section id="pageContainer"></section>
     </main>

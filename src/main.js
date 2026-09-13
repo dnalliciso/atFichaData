@@ -1,5 +1,6 @@
 import { modules } from "./modules/registry.js";
 import { navState, onNavigate, setActivePage } from "./core/router.js";
+import { setupTabScroller } from "./core/tabScroller.js";
 
 const els = {
   themeToggle: document.querySelector("#themeToggle"),
@@ -7,6 +8,9 @@ const els = {
   pageTabs: document.querySelector("#pageTabs"),
   pageContainer: document.querySelector("#pageContainer"),
 };
+
+const refreshModuleTabScroller = setupTabScroller(document.querySelector("#moduleTabsScroller"));
+const refreshPageTabScroller = setupTabScroller(document.querySelector("#pageTabsScroller"));
 
 const THEME_STORAGE_KEY = "atficha-theme";
 
@@ -53,13 +57,14 @@ function findPage(module, pageId) {
 
 function renderModuleTabs() {
   els.moduleTabs.innerHTML = modules
-    .map(
-      (module) => `
-        <button type="button" class="tab-button${module.id === navState.moduleId ? " active" : ""}" data-module="${module.id}">
+    .map((module) => {
+      const active = module.id === navState.moduleId;
+      return `
+        <button type="button" role="tab" aria-selected="${active}" class="tab-button${active ? " active" : ""}" data-module="${module.id}">
           ${module.label}
         </button>
-      `,
-    )
+      `;
+    })
     .join("");
 
   els.moduleTabs.querySelectorAll("[data-module]").forEach((button) => {
@@ -72,13 +77,14 @@ function renderModuleTabs() {
 
 function renderPageTabs(module) {
   els.pageTabs.innerHTML = module.pages
-    .map(
-      (page) => `
-        <button type="button" class="tab-button${page.id === navState.pageId ? " active" : ""}" data-page="${page.id}">
+    .map((page) => {
+      const active = page.id === navState.pageId;
+      return `
+        <button type="button" role="tab" aria-selected="${active}" class="tab-button${active ? " active" : ""}" data-page="${page.id}">
           ${page.label}
         </button>
-      `,
-    )
+      `;
+    })
     .join("");
 
   els.pageTabs.querySelectorAll("[data-page]").forEach((button) => {
@@ -94,6 +100,8 @@ function renderActivePage() {
 
   renderModuleTabs();
   renderPageTabs(module);
+  refreshModuleTabScroller();
+  refreshPageTabScroller();
 
   currentUnmount?.();
   const result = pageEntry.page.mount(els.pageContainer);

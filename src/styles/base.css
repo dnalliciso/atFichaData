@@ -226,20 +226,98 @@ h2 {
   font-size: 0.82rem;
 }
 
-.module-tabs,
-.page-tabs {
+/* Tabs de módulo/página: fila única desplazable en vez de wrap a varias
+   líneas — con muchos ítems, wrap rompe el modelo mental de "una fila" y
+   hace ambigua cuál está activa. Se desplaza con scroll (mouse/trackpad/
+   touch) y con las flechas que aparecen solo cuando hay overflow. */
+.tab-scroller {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
   margin-bottom: var(--space-3);
 }
 
-.module-tabs {
+.tab-scroller--modules {
   border-bottom: 1px solid var(--line);
   padding-bottom: var(--space-3);
 }
 
+.module-tabs,
+.page-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.module-tabs::-webkit-scrollbar,
+.page-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Degradado en los bordes que insinúa que hay más tabs — solo se activa
+   cuando el JS detecta overflow real (ver src/core/tabScroller.js), así
+   una lista corta no queda con los extremos desvanecidos sin motivo. */
+.tab-scroller[data-overflow="true"] .module-tabs,
+.tab-scroller[data-overflow="true"] .page-tabs {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+.tab-scroll-arrow {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* [hidden] pierde contra el display:inline-flex de arriba en el cascade
+   (misma especificidad, gana la regla de autor sobre la del user-agent) —
+   sin esto, el atributo hidden que pone core/tabScroller.js no ocultaba
+   nada. */
+.tab-scroll-arrow[hidden] {
+  display: none;
+}
+
+.tab-scroll-arrow--start {
+  margin-right: var(--space-2);
+}
+
+.tab-scroll-arrow--end {
+  margin-left: var(--space-2);
+}
+
+.tab-scroll-arrow:hover {
+  border-color: var(--accent);
+}
+
 .tab-button {
+  flex-shrink: 0;
   min-height: 36px;
   padding: 0 var(--space-3);
   border: 1px solid var(--line);
@@ -247,6 +325,7 @@ h2 {
   background: var(--panel);
   color: var(--muted);
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 
