@@ -1,0 +1,11 @@
+/* Overrides específicos de "Estándares internacionales de tiempo de
+   respuesta": separa visualmente las dos tablas (una por fuente). */
+.report-surface h3 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 1rem;
+  color: var(--navy);
+}
+
+.report-surface h3:first-of-type {
+  margin-top: var(--space-3);
+}
