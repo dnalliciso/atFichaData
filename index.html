@@ -13,10 +13,22 @@
           <p class="eyebrow">Informes interactivos</p>
           <h1>Disponibilidad y tiempo de respuesta</h1>
         </div>
-        <label class="file-control">
-          <span>Excel</span>
-          <input id="fileInput" type="file" accept=".xlsx,.xls" />
-        </label>
+        <div class="topbar-actions">
+          <button
+            id="themeToggle"
+            class="theme-toggle"
+            type="button"
+            aria-label="Cambiar a modo oscuro"
+          >
+            <span aria-hidden="true">🌙</span>
+          </button>
+          <div class="file-control">
+            <span class="file-control-label">Excel</span>
+            <button type="button" id="fileTrigger" class="file-trigger">Elegir archivo</button>
+            <span id="fileName" class="file-name">Heatmap_objetivo.xlsx (ejemplo)</span>
+            <input id="fileInput" type="file" accept=".xlsx,.xls" hidden />
+          </div>
+        </div>
       </header>
 
       <section class="summary-strip" aria-label="Resumen">

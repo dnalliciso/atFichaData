@@ -83,7 +83,7 @@ export function render(rows, options) {
 
   const hours = d3.range(0, 24);
   const margin = { top: 40, right: 116, bottom: 60, left: 78 };
-  const cellWidth = 30;
+  const cellWidth = 38;
   const cellHeight = 17;
   const width = Math.max(720, margin.left + hours.length * cellWidth + margin.right);
   const chartHeight = margin.top + reservedDays * cellHeight;
@@ -191,7 +191,7 @@ export function render(rows, options) {
     .attr("x", x.bandwidth() / 2)
     .attr("y", y.bandwidth() / 2 + 4)
     .attr("text-anchor", "middle")
-    .text((d) => (x.bandwidth() >= 34 ? cellLabelFor(d, config) : ""));
+    .text((d) => (x.bandwidth() >= 28 ? cellLabelFor(d, config) : ""));
 
   if (gradient) {
     const gradientId = `legend-${state.report}`;

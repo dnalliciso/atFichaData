@@ -27,7 +27,45 @@ const els = {
   errorBox: document.querySelector("#errorBox"),
   tooltip: document.querySelector("#tooltip"),
   fileInput: document.querySelector("#fileInput"),
+  fileTrigger: document.querySelector("#fileTrigger"),
+  fileName: document.querySelector("#fileName"),
+  themeToggle: document.querySelector("#themeToggle"),
 };
+
+const THEME_STORAGE_KEY = "atficha-theme";
+
+function applyThemeIcon(theme) {
+  els.themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+  els.themeToggle.setAttribute(
+    "aria-label",
+    theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro",
+  );
+}
+
+function effectiveTheme() {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function initTheme() {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark") {
+    document.documentElement.setAttribute("data-theme", stored);
+  }
+  applyThemeIcon(effectiveTheme());
+}
+
+els.themeToggle.addEventListener("click", () => {
+  const next = effectiveTheme() === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_STORAGE_KEY, next);
+  document.documentElement.setAttribute("data-theme", next);
+  applyThemeIcon(next);
+});
+
+initTheme();
+
+els.fileTrigger.addEventListener("click", () => els.fileInput.click());
 
 function showError(message) {
   els.errorBox.hidden = false;
@@ -158,6 +196,7 @@ els.dateToInput.addEventListener("change", () => {
 els.fileInput.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
+  els.fileName.textContent = file.name;
   try {
     clearError();
     const rows = await loadWorkbookFromFile(file);
