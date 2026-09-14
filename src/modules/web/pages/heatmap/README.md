@@ -16,7 +16,6 @@ Archivo Excel esperado: `dataExample/Heatmap_objetivo.xlsx`, hoja `Heatmap`.
 | `hora` | número (0-23) | sí | `14` |
 | `dia` | número | no (se infiere de la fecha) | `14` |
 | `mes` | texto (3 letras) | no (se infiere de la fecha) | `ago` |
-| `dia_semana_label` | texto (`L`/`M`/`X`/`J`/`V`/`S`/`D`) | no (si falta, "Detalle hora" usa un rótulo de respaldo lunes-domingo) | `X` |
 | `disponibilidad` | número (%) | no | `99.8` |
 | `tiempo` | número (segundos) | no | `1.2` |
 | `estado_bloque` | `valor_base` / `eventos_cliente` / `marcado_atentus` | no | `eventos_cliente` |
@@ -41,29 +40,27 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
 - La leyenda de degradado usa los colores reales del Excel como paradas
   (no recalcula ninguna escala propia).
 
-## Selección día + hora
+## Tooltip de hover con gráfico combinado
 
-Clickear una celda del mapa principal selecciona esa combinación
-día+hora (no solo el día). Tres indicadores visuales, todos pulsantes:
+Pasar el mouse sobre cualquier celda del mapa principal muestra un
+tooltip grande con un gráfico combinado de las 24 horas de ese día:
+barras de disponibilidad (coloreadas igual que las celdas del mapa) y una
+línea de tiempo de respuesta superpuesta. Cambiar de día (mover el mouse
+a otra fila) anima el gráfico hacia los nuevos datos en vez de
+reemplazarlos de golpe. Sacar el mouse del mapa (y del propio tooltip)
+lo oculta.
 
-- Un borde amarillo bordeando toda la fila (el día) y otro bordeando
-  toda la columna (la hora) en el mapa principal.
-- Un anillo violeta en la celda exacta del mapa principal, y en la barra
-  correspondiente de cada panel de detalle.
+El tooltip de texto chico que aparece al detenerse sobre una celda
+puntual (con el valor exacto de esa hora) sigue funcionando igual que
+antes — son complementarios, no se reemplazan entre sí.
 
-Clickear fuera de la matriz principal (en cualquier otra parte de la
-página) limpia la selección.
+Sobre las barras de disponibilidad hay un círculo arrastrable (mismo
+mecanismo que el de la leyenda del mapa principal) que traza una línea
+de referencia horizontal, para comparar a ojo "hasta dónde llega" cada
+hora contra un umbral elegido. Arranca en 95% y vuelve a ese valor si
+cambiás Objetivo o Período.
 
-Tres paneles de detalle, todos derivados de la misma selección día+hora:
-
-- **Detalle horario**: las 24 horas del día seleccionado.
-- **Detalle hora**: el mismo día de semana en cada uno de los 7 días de
-  esa semana calendario (lunes a domingo) — usa `dia_semana_label` para
-  las etiquetas y busca en **todas** las filas del objetivo, sin aplicar
-  el filtro de Período (para mostrar siempre la semana completa aunque
-  el filtro elegido la corte).
-- **Detalle día de la semana**: todas las ocurrencias de ese mismo día
-  de semana **dentro del filtro de Período activo** (ej. si seleccionás
-  un lunes, todos los lunes que el Período actual incluya), a la hora
-  seleccionada — etiquetadas por fecha. A diferencia de "Detalle hora",
-  este panel sí respeta el Período.
+El selector "Informe: Disponibilidad / Respuesta" solo cambia cómo se
+colorean las celdas del mapa principal — el tooltip siempre muestra
+ambas métricas (disponibilidad y tiempo de respuesta) juntas, sin
+importar la pestaña activa.
