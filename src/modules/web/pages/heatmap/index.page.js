@@ -7,6 +7,7 @@ import { reportConfig, average, SPECIAL_STATES } from "./colorScales.js";
 import * as heatmapMain from "./heatmapMain.js";
 import * as heatmapHourly from "./heatmapHourly.js";
 import * as heatmapWeekHour from "./heatmapWeekHour.js";
+import * as heatmapPeriodWeekday from "./heatmapPeriodWeekday.js";
 import * as eventsPanel from "./events.js";
 
 ensurePageStyle(new URL("./style.css", import.meta.url).href);
@@ -106,6 +107,15 @@ const TEMPLATE = `
               </div>
             </div>
             <div data-ref="weekHourHeatmap" class="chart-wrap small" aria-label="Detalle hora"></div>
+          </section>
+          <section>
+            <div class="section-heading compact">
+              <div>
+                <p>Detalle</p>
+                <h2 data-ref="periodWeekdayTitle">Detalle día de la semana</h2>
+              </div>
+            </div>
+            <div data-ref="periodWeekdayHeatmap" class="chart-wrap small" aria-label="Detalle día de la semana"></div>
           </section>
         </div>
         <section class="records-panel">
@@ -231,6 +241,13 @@ export function mount(container) {
     heatmapWeekHour.render(getFilteredRows(false), {
       weekHourEl: els.weekHourHeatmap,
       weekHourTitleEl: els.weekHourTitle,
+      tooltipEl,
+      state,
+    });
+
+    heatmapPeriodWeekday.render(rows, {
+      periodWeekdayEl: els.periodWeekdayHeatmap,
+      periodWeekdayTitleEl: els.periodWeekdayTitle,
       tooltipEl,
       state,
     });
