@@ -127,33 +127,46 @@
   color: var(--navy);
 }
 
-.heatmap-row {
+/* El mapa ya no comparte fila con nada — va a ancho completo, y los 3
+   gráficos de hover (día / semana / período) van en una grilla propia
+   debajo de él. */
+.hover-chart-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
-  align-items: start;
+  margin-top: var(--space-4);
 }
 
-.heatmap-row > * {
+.hover-chart-grid > * {
   /* Mismo motivo que ya documenté en .detail-grid > * (ronda anterior,
-     ya borrada junto con esa sección): sin esto, el item de grid que
-     envuelve el SVG ancho del mapa (~720px+) no se encoge por debajo de
-     ese ancho intrínseco — el propio .chart-wrap ya maneja el overflow
-     con scroll horizontal, pero necesita que el grid le permita
-     encogerse primero. */
+     ya borrada junto con esa sección): sin esto, el item de grid no se
+     encoge por debajo del ancho intrínseco del SVG que tiene adentro. */
   min-width: 0;
 }
 
-.hover-chart-stack {
-  display: grid;
-  gap: var(--space-4);
-  min-width: 0;
+/* .empty-state (base.css) pone display:grid con la misma especificidad
+   que la regla nativa [hidden]{display:none} del navegador — como la
+   nuestra se carga después, le ganaba, y el aviso "Pasá el mouse..."
+   quedaba visible ENCIMA del gráfico ya renderizado en vez de
+   desaparecer. Esta regla, más específica (.empty-state + [hidden]),
+   gana siempre. */
+.empty-state[hidden] {
+  display: none;
+}
+
+/* Mismo problema que el de arriba: .hover-chart svg { display:block }
+   (más abajo en este archivo) tiene más especificidad que [hidden] —
+   sin esto, el <svg> de cada gráfico (ejes, leyenda, umbral) quedaba
+   visible desde el arranque, antes del primer hover, en vez de esperar
+   a que haya datos que mostrar. */
+.hover-chart svg[hidden] {
+  display: none;
 }
 
 @media (max-width: 980px) {
   .summary-strip,
   .workspace,
-  .heatmap-row {
+  .hover-chart-grid {
     grid-template-columns: 1fr;
   }
 }

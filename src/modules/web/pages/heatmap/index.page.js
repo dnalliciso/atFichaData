@@ -84,13 +84,12 @@ const TEMPLATE = `
       </div>
 
       <div data-ref="errorBox" class="error-box" hidden></div>
-      <div class="heatmap-row">
-        <div data-ref="heatmap" class="chart-wrap" aria-label="Heatmap principal"></div>
-        <div class="hover-chart-stack">
-          <div data-ref="hoverChart" class="hover-chart"></div>
-          <div data-ref="hoverWeekChart" class="hover-chart"></div>
-          <div data-ref="hoverPeriodChart" class="hover-chart"></div>
-        </div>
+      <div data-ref="heatmap" class="chart-wrap" aria-label="Heatmap principal"></div>
+
+      <div class="hover-chart-grid">
+        <div data-ref="hoverChart" class="hover-chart"></div>
+        <div data-ref="hoverWeekChart" class="hover-chart"></div>
+        <div data-ref="hoverPeriodChart" class="hover-chart"></div>
       </div>
 
       <section class="records-panel">
