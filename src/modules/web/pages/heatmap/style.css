@@ -48,12 +48,35 @@
   stroke-width: 2px;
 }
 
-/* Fila fijada (click en una celda) — mismo trazo que el hover, pero
-   puesto a mano vía clase (ver heatmapHoverChart.js) en vez de
-   depender de que el mouse siga encima. */
-.heat-cell--pinned {
-  stroke: var(--navy);
-  stroke-width: 2px;
+/* Fila/columna fijadas (click en una celda) — bordes pulsantes puestos
+   a mano vía clase en cada celda de esa fila u hora (ver
+   heatmapHoverChart.js), en vez de un <rect> overlay separado: da el
+   mismo efecto de "borde continuo" porque cada celda ya tiene su propio
+   rx redondeado, sin que heatmapHoverChart.js necesite conocer los
+   márgenes/escalas internos de heatmapMain.js para dibujar un overlay
+   a mano. La celda exacta (coincide fila Y columna) usa un color propio
+   para distinguirse de "está en la fila"/"está en la columna". */
+@keyframes pulse-select {
+  0%,
+  100% {
+    stroke-opacity: 1;
+    stroke-width: 2px;
+  }
+  50% {
+    stroke-opacity: 0.4;
+    stroke-width: 4px;
+  }
+}
+
+.heat-cell--pinned-row,
+.heat-cell--pinned-col {
+  stroke: #ffb300;
+  animation: pulse-select 1.2s ease-in-out infinite;
+}
+
+.heat-cell--pinned-exact {
+  stroke: var(--accent-fill);
+  animation: pulse-select 1.2s ease-in-out infinite;
 }
 
 /* Día sin datos en el panel de semana — placeholder punteado, sin la

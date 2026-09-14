@@ -182,17 +182,28 @@ export function createHoverChart(options) {
   let pinnedDayKey = null;
   let pinnedHour = null;
 
-  // Resalta (o limpia, si dayKeyToHighlight es null) la fila entera del
-  // mapa principal que corresponde al día fijado. Se vuelve a llamar
-  // desde update() porque heatmapMain.render() reconstruye el <svg> del
-  // mapa en cada render — cualquier clase puesta a mano en una celda
-  // anterior desaparece con ese rebuild.
-  function setPinnedHighlight(dayKeyToHighlight) {
-    heatmapEl.querySelectorAll(".heat-cell--pinned").forEach((cell) => cell.classList.remove("heat-cell--pinned"));
-    if (dayKeyToHighlight == null) return;
+  const PINNED_CLASSES = ["heat-cell--pinned-row", "heat-cell--pinned-col", "heat-cell--pinned-exact"];
+
+  // Resalta (o limpia, si dayKey/hour son null) la fila del día fijado y
+  // la columna de la hora fijada en el mapa principal — la celda que
+  // coincide en ambos ejes se marca distinto (ver .heat-cell--pinned-exact
+  // en el CSS). Se vuelve a llamar desde update() porque
+  // heatmapMain.render() reconstruye el <svg> del mapa en cada render —
+  // cualquier clase puesta a mano en una celda anterior desaparece con
+  // ese rebuild.
+  function setPinnedHighlight(dayKeyToHighlight, hourToHighlight) {
+    heatmapEl
+      .querySelectorAll(PINNED_CLASSES.map((cls) => `.${cls}`).join(","))
+      .forEach((cell) => cell.classList.remove(...PINNED_CLASSES));
+    if (dayKeyToHighlight == null || hourToHighlight == null) return;
     heatmapEl.querySelectorAll(".heat-cell").forEach((cell) => {
       const datum = cell.__data__;
-      if (datum && datum.dayKey === dayKeyToHighlight) cell.classList.add("heat-cell--pinned");
+      if (!datum) return;
+      const sameDay = datum.dayKey === dayKeyToHighlight;
+      const sameHour = datum.hora === hourToHighlight;
+      if (sameDay && sameHour) cell.classList.add("heat-cell--pinned-exact");
+      else if (sameDay) cell.classList.add("heat-cell--pinned-row");
+      else if (sameHour) cell.classList.add("heat-cell--pinned-col");
     });
   }
 
@@ -298,7 +309,7 @@ export function createHoverChart(options) {
     if (pinnedDayKey === datum.dayKey && pinnedHour === datum.hora) {
       pinnedDayKey = null;
       pinnedHour = null;
-      setPinnedHighlight(null);
+      setPinnedHighlight(null, null);
       return;
     }
 
@@ -308,7 +319,7 @@ export function createHoverChart(options) {
     refreshSubPanels(shownDayKey, shownHour);
     pinnedDayKey = datum.dayKey;
     pinnedHour = datum.hora;
-    setPinnedHighlight(pinnedDayKey);
+    setPinnedHighlight(pinnedDayKey, pinnedHour);
   }
 
   heatmapEl.addEventListener("mousemove", handleMove);
@@ -325,7 +336,7 @@ export function createHoverChart(options) {
     pinnedHour = null;
     shownDayKey = null;
     shownHour = null;
-    setPinnedHighlight(null);
+    setPinnedHighlight(null, null);
     titleEl.textContent = "";
     emptyEl.hidden = false;
     svgNode.hidden = true;
