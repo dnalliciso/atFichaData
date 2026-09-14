@@ -212,7 +212,7 @@ export function createHoverChart(options) {
     if (!dayRows.length) return false;
     shownDayKey = dayKey;
     emptyEl.hidden = true;
-    svgNode.hidden = false;
+    svgNode.toggleAttribute("hidden", false);
     renderDay(dayRows);
     return true;
   }
@@ -339,7 +339,7 @@ export function createHoverChart(options) {
     setPinnedHighlight(null, null);
     titleEl.textContent = "";
     emptyEl.hidden = false;
-    svgNode.hidden = true;
+    svgNode.toggleAttribute("hidden", true);
 
     weekPanel.reset();
     periodPanel.reset();

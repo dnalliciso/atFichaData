@@ -225,13 +225,13 @@ export function createWeekPanel(containerEl, tooltipEl) {
 
     titleEl.textContent = `${String(hour).padStart(2, "0")}:00 - misma hora en la semana`;
     emptyEl.hidden = true;
-    svgNode.hidden = false;
+    svgNode.toggleAttribute("hidden", false);
   }
 
   function reset() {
     titleEl.textContent = "";
     emptyEl.hidden = false;
-    svgNode.hidden = true;
+    svgNode.toggleAttribute("hidden", true);
   }
 
   return { show, reset };
