@@ -43,8 +43,7 @@
   stroke-width: 0.8px;
 }
 
-.heat-cell:hover,
-.heat-cell.selected {
+.heat-cell:hover {
   stroke: var(--navy);
   stroke-width: 2px;
 }
@@ -78,6 +77,19 @@
 .selection-ring {
   fill: none;
   stroke: var(--accent-fill);
+  pointer-events: none;
+  animation: pulse-select 1.2s ease-in-out infinite;
+}
+
+/* Borde de fila/columna: dos <rect> extra (uno del ancho de toda la fila
+   del día, otro del alto de toda la columna de la hora), pulsantes en
+   amarillo — mismo mecanismo que .selection-ring (reusa @keyframes
+   pulse-select, que solo anima stroke, nunca color), pero un tono
+   distinto para no confundirse con el anillo violeta de la celda exacta
+   ni con .pulse-alert (esa es la alerta de "Caída Total"). */
+.selection-band {
+  fill: none;
+  stroke: #ffb300;
   pointer-events: none;
   animation: pulse-select 1.2s ease-in-out infinite;
 }
