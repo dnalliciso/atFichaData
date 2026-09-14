@@ -42,27 +42,42 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
 
 ## Gráfico de hover con pin
 
-A la derecha del mapa principal hay un gráfico combinado (barras de
-disponibilidad + línea de tiempo de respuesta, 24 horas) que se
-actualiza en vivo al pasar el mouse por una fila del mapa — con
-transición animada al cambiar de día, no un reemplazo de golpe.
+A la derecha del mapa principal hay 3 gráficos combinados apilados
+(barras de disponibilidad + línea de tiempo de respuesta), todos
+derivados de la misma celda (día + hora) que estés hover-eando o hayas
+fijado:
 
-Clickear una celda **fija** el gráfico en ese día: deja de reaccionar
-al hover, y esa fila queda resaltada en el mapa. Clickear la misma
-celda de nuevo lo suelta (vuelve al modo hover-en-vivo). Clickear otra
-celda distinta re-fija al nuevo día.
+- **El día**: las 24 horas del día bajo el mouse.
+- **La semana**: la misma hora en cada uno de los 7 días de esa semana
+  calendario (lunes a domingo) — busca en **todas** las filas del
+  objetivo, sin aplicar el filtro de Período (para mostrar siempre la
+  semana completa aunque el filtro elegido la corte). Días sin datos
+  quedan como un espacio punteado.
+- **El período**: la misma hora en todas las ocurrencias de ese mismo
+  día de semana **dentro del filtro de Período activo** (ej. si estás
+  mirando un sábado, todos los sábados que el Período actual incluya) —
+  a diferencia del panel de semana, este sí respeta el Período.
 
-El valor exacto de cada hora (disponibilidad, tiempo de respuesta,
-estado) se consigue pasando el mouse sobre las barras o los puntos del
-propio gráfico — funciona tanto en modo vivo como fijado. Las celdas
-del mapa principal ya no tienen ese tooltip de texto (se mudó acá).
+Mover el mouse por una fila del mapa actualiza los 3 en vivo, con
+transición animada. Moverse a otra hora de la MISMA fila no cambia el
+gráfico del día (ya muestra las 24 horas) pero sí actualiza los de
+semana y período, porque esos dependen de la hora puntual.
 
-Sobre las barras de disponibilidad hay un círculo arrastrable (mismo
-mecanismo que el de la leyenda del mapa principal) que traza una línea
-de referencia horizontal, para comparar a ojo "hasta dónde llega" cada
-hora contra un umbral elegido. Arranca en 95% y vuelve a ese valor si
-cambiás Objetivo o Período (eso también suelta el pin, si había uno).
+Clickear una celda **fija** los 3 gráficos en esa combinación día+hora:
+dejan de reaccionar al hover, y esa fila queda resaltada en el mapa.
+Clickear la misma celda de nuevo lo suelta (vuelve al modo hover-en-vivo).
+Clickear otra celda distinta re-fija a la nueva.
+
+El valor exacto de cada barra o punto se consigue pasando el mouse sobre
+ella — funciona tanto en modo vivo como fijado. Las celdas del mapa
+principal no tienen tooltip de texto propio (vive en estos 3 gráficos).
+
+Sobre las barras de disponibilidad del gráfico del día hay un círculo
+arrastrable (mismo mecanismo que el de la leyenda del mapa principal)
+que traza una línea de referencia horizontal, para comparar a ojo "hasta
+dónde llega" cada hora contra un umbral elegido. Arranca en 95% y vuelve
+a ese valor si cambiás Objetivo o Período (eso también suelta el pin).
 
 El selector "Informe: Disponibilidad / Respuesta" solo cambia cómo se
-colorean las celdas del mapa principal — el gráfico siempre muestra
+colorean las celdas del mapa principal — los 3 gráficos siempre muestran
 ambas métricas juntas, sin importar la pestaña activa.
