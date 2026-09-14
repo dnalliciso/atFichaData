@@ -44,13 +44,26 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
 ## Selección día + hora
 
 Clickear una celda del mapa principal selecciona esa combinación
-día+hora (no solo el día): la celda exacta, la barra correspondiente en
-"Detalle horario" y la barra correspondiente en "Detalle hora" quedan
-marcadas con un anillo pulsante. Clickear fuera de la matriz principal
-(en cualquier otra parte de la página) limpia la selección.
+día+hora (no solo el día). Tres indicadores visuales, todos pulsantes:
 
-"Detalle hora" muestra, para la hora seleccionada, el valor de cada día
-de esa semana calendario (lunes a domingo) — usa `dia_semana_label` para
-las etiquetas y busca en **todas** las filas del objetivo actual, sin
-aplicar el filtro de fechas (Período), para mostrar siempre la semana
-completa aunque el filtro elegido la corte.
+- Un borde amarillo bordeando toda la fila (el día) y otro bordeando
+  toda la columna (la hora) en el mapa principal.
+- Un anillo violeta en la celda exacta del mapa principal, y en la barra
+  correspondiente de cada panel de detalle.
+
+Clickear fuera de la matriz principal (en cualquier otra parte de la
+página) limpia la selección.
+
+Tres paneles de detalle, todos derivados de la misma selección día+hora:
+
+- **Detalle horario**: las 24 horas del día seleccionado.
+- **Detalle hora**: el mismo día de semana en cada uno de los 7 días de
+  esa semana calendario (lunes a domingo) — usa `dia_semana_label` para
+  las etiquetas y busca en **todas** las filas del objetivo, sin aplicar
+  el filtro de Período (para mostrar siempre la semana completa aunque
+  el filtro elegido la corte).
+- **Detalle día de la semana**: todas las ocurrencias de ese mismo día
+  de semana **dentro del filtro de Período activo** (ej. si seleccionás
+  un lunes, todos los lunes que el Período actual incluya), a la hora
+  seleccionada — etiquetadas por fecha. A diferencia de "Detalle hora",
+  este panel sí respeta el Período.
