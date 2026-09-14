@@ -76,6 +76,16 @@ test("cellLabelFor usa el valor compacto en Disponibilidad", () => {
   assert.equal(cellLabelFor(row, reportConfig.availability), "98.4");
 });
 
+test("cellLabelFor no muestra etiqueta cuando la disponibilidad es 100%", () => {
+  const row = { estado_bloque: "valor_base", disponibilidad: 100 };
+  assert.equal(cellLabelFor(row, reportConfig.availability), "");
+});
+
+test("cellLabelFor no muestra etiqueta cuando la disponibilidad redondea a 100%", () => {
+  const row = { estado_bloque: "valor_base", disponibilidad: 99.96 };
+  assert.equal(cellLabelFor(row, reportConfig.availability), "");
+});
+
 test("resolveCellColor devuelve el color asignado en el Excel para Disponibilidad", () => {
   const row = { estado_bloque: "valor_base", color_disp: "#65B636", color_tiempo: "#2372B6" };
   assert.equal(resolveCellColor(row, reportConfig.availability), "#65B636");

@@ -144,7 +144,7 @@ export function createPeriodPanel(containerEl, tooltipEl) {
       .attr("y", (cell) => yBar(barValue(cell.row)))
       .attr("height", (cell) => yBar(0) - yBar(barValue(cell.row)))
       .attr("fill", (cell) => resolveCellColor(cell.row, reportConfig.availability))
-      .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row, reportConfig.availability)))
+      .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row)))
       .on("mousemove", (event) => moveTooltip(tooltipEl, event))
       .on("mouseleave", () => hideTooltip(tooltipEl));
 
@@ -165,7 +165,7 @@ export function createPeriodPanel(containerEl, tooltipEl) {
       .attr("cx", (cell) => x(cell.dateKeyValue) + x.bandwidth() / 2)
       .attr("cy", (cell) => yLine(cell.row.tiempo))
       .attr("r", 3)
-      .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row, reportConfig.response)))
+      .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row)))
       .on("mousemove", (event) => moveTooltip(tooltipEl, event))
       .on("mouseleave", () => hideTooltip(tooltipEl));
 

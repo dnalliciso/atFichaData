@@ -241,7 +241,7 @@ export function createHoverChart(options) {
             .attr("y", yBar(0))
             .attr("height", 0)
             .attr("fill", (row) => resolveCellColor(row, reportConfig.availability))
-            .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row, reportConfig.availability)))
+            .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row)))
             .on("mousemove", (event) => moveTooltip(tooltipEl, event))
             .on("mouseleave", () => hideTooltip(tooltipEl))
             .call((enter) =>
@@ -276,7 +276,7 @@ export function createHoverChart(options) {
             .attr("cx", (row) => x(row.hora) + x.bandwidth() / 2)
             .attr("cy", (row) => yLine(Number.isFinite(row.tiempo) ? row.tiempo : 0))
             .attr("r", 3)
-            .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row, reportConfig.response)))
+            .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row)))
             .on("mousemove", (event) => moveTooltip(tooltipEl, event))
             .on("mouseleave", () => hideTooltip(tooltipEl)),
         (update) =>

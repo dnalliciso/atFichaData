@@ -170,7 +170,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
             .attr("y", yBar(0))
             .attr("height", 0)
             .on("mouseenter", (event, cell) => {
-              if (cell.row) showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row, reportConfig.availability));
+              if (cell.row) showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row));
             })
             .on("mousemove", (event, cell) => {
               if (cell.row) moveTooltip(tooltipEl, event);
@@ -213,7 +213,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
             .attr("r", 3)
             .attr("cx", (cell) => x(cell.label) + x.bandwidth() / 2)
             .attr("cy", (cell) => yLine(cell.row.tiempo))
-            .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row, reportConfig.response)))
+            .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row)))
             .on("mousemove", (event) => moveTooltip(tooltipEl, event))
             .on("mouseleave", () => hideTooltip(tooltipEl)),
         (update) =>

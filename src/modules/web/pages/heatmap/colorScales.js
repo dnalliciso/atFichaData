@@ -62,7 +62,12 @@ export function compactCellLabel(value, config) {
 export function cellLabelFor(row, config) {
   if (specialStateFor(row.estado_bloque)) return "";
   if (config.useAnomalyLabel) return row.label_tiempo || "";
-  return compactCellLabel(row[config.valueKey], config);
+  const label = compactCellLabel(row[config.valueKey], config);
+  // En Disponibilidad, el 100% es el caso normal/esperado en casi todas
+  // las celdas — mostrarlo en cada una satura el mapa sin aportar nada;
+  // solo interesa ver el número cuando hay una caída real.
+  if (config.valueKey === "disponibilidad" && label === "100") return "";
+  return label;
 }
 
 export function resolveCellColor(row, config) {
