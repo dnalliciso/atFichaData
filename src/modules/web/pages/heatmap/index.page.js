@@ -1,13 +1,11 @@
 import { ensurePageStyle, showError, clearError } from "../../../../core/dom.js";
-import { formatDate, dateKey } from "../../../../core/excel.js";
+import { formatDate } from "../../../../core/excel.js";
 import { renderCategoryLegend } from "../../../../shared/legend.js";
 import { loadDefault, loadFromFile } from "./data.js";
 import { state, getFilteredRows, defaultMonthRange } from "./state.js";
 import { reportConfig, average, SPECIAL_STATES } from "./colorScales.js";
 import * as heatmapMain from "./heatmapMain.js";
-import * as heatmapHourly from "./heatmapHourly.js";
-import * as heatmapWeekHour from "./heatmapWeekHour.js";
-import * as heatmapPeriodWeekday from "./heatmapPeriodWeekday.js";
+import { createHoverChart } from "./heatmapHoverChart.js";
 import * as eventsPanel from "./events.js";
 
 ensurePageStyle(new URL("./style.css", import.meta.url).href);
@@ -87,47 +85,17 @@ const TEMPLATE = `
 
       <div data-ref="errorBox" class="error-box" hidden></div>
       <div data-ref="heatmap" class="chart-wrap" aria-label="Heatmap principal"></div>
+      <div data-ref="hoverChart" class="hover-chart" hidden></div>
 
-      <div class="detail-grid">
-        <div class="detail-stack">
-          <section>
-            <div class="section-heading compact">
-              <div>
-                <p>Detalle</p>
-                <h2 data-ref="detailTitle">Selecciona un día</h2>
-              </div>
-            </div>
-            <div data-ref="hourlyHeatmap" class="chart-wrap small" aria-label="Detalle horario"></div>
-          </section>
-          <section>
-            <div class="section-heading compact">
-              <div>
-                <p>Detalle</p>
-                <h2 data-ref="weekHourTitle">Detalle hora</h2>
-              </div>
-            </div>
-            <div data-ref="weekHourHeatmap" class="chart-wrap small" aria-label="Detalle hora"></div>
-          </section>
-          <section>
-            <div class="section-heading compact">
-              <div>
-                <p>Detalle</p>
-                <h2 data-ref="periodWeekdayTitle">Detalle día de la semana</h2>
-              </div>
-            </div>
-            <div data-ref="periodWeekdayHeatmap" class="chart-wrap small" aria-label="Detalle día de la semana"></div>
-          </section>
-        </div>
-        <section class="records-panel">
-          <div class="section-heading compact">
-            <div>
-              <p>Eventos</p>
-              <h2>Bloques marcados</h2>
-            </div>
+      <section class="records-panel">
+        <div class="section-heading compact">
+          <div>
+            <p>Eventos</p>
+            <h2>Bloques marcados</h2>
           </div>
-          <div data-ref="eventsList" class="events-list"></div>
-        </section>
-      </div>
+        </div>
+        <div data-ref="eventsList" class="events-list"></div>
+      </section>
     </section>
   </section>
 `;
@@ -150,6 +118,7 @@ export function mount(container) {
   });
 
   const tooltipEl = document.querySelector("#tooltip");
+  const hoverChart = createHoverChart(els.hoverChart, els.heatmap);
 
   function setRows(rows) {
     if (!rows.length) {
@@ -161,8 +130,6 @@ export function mount(container) {
     state.objective = objectives[0];
     state.dateFrom = "";
     state.dateTo = "";
-    state.selectedDayKey = "";
-    state.selectedHour = null;
     populateFilters();
     render();
   }
@@ -217,40 +184,8 @@ export function mount(container) {
 
     renderCategoryLegend(els.legend, Object.values(SPECIAL_STATES));
 
-    heatmapMain.render(rows, {
-      heatmapEl: els.heatmap,
-      tooltipEl,
-      state,
-      onCellSelected: (dayKey, hora) => {
-        state.selectedDayKey = dayKey;
-        state.selectedHour = hora;
-        render();
-      },
-    });
-
-    const fallbackDayKey = rows[0] ? dateKey(rows[0].fecha) : null;
-    const selectedDayKey = state.selectedDayKey || fallbackDayKey;
-    const dayRows = selectedDayKey ? rows.filter((row) => dateKey(row.fecha) === selectedDayKey) : [];
-    heatmapHourly.render(dayRows, {
-      hourlyEl: els.hourlyHeatmap,
-      detailTitleEl: els.detailTitle,
-      tooltipEl,
-      state,
-    });
-
-    heatmapWeekHour.render(getFilteredRows(false), {
-      weekHourEl: els.weekHourHeatmap,
-      weekHourTitleEl: els.weekHourTitle,
-      tooltipEl,
-      state,
-    });
-
-    heatmapPeriodWeekday.render(rows, {
-      periodWeekdayEl: els.periodWeekdayHeatmap,
-      periodWeekdayTitleEl: els.periodWeekdayTitle,
-      tooltipEl,
-      state,
-    });
+    heatmapMain.render(rows, { heatmapEl: els.heatmap, tooltipEl, state });
+    hoverChart.update(rows);
 
     eventsPanel.render(rows, els.eventsList);
   }
@@ -266,44 +201,19 @@ export function mount(container) {
     state.objective = els.objectiveSelect.value;
     state.dateFrom = "";
     state.dateTo = "";
-    state.selectedDayKey = "";
-    state.selectedHour = null;
     populateFilters();
     render();
   });
 
   els.dateFromInput.addEventListener("change", () => {
     state.dateFrom = els.dateFromInput.value;
-    state.selectedDayKey = "";
-    state.selectedHour = null;
     render();
   });
 
   els.dateToInput.addEventListener("change", () => {
     state.dateTo = els.dateToInput.value;
-    state.selectedDayKey = "";
-    state.selectedHour = null;
     render();
   });
-
-  // Clickear fuera de la matriz principal (en cualquier otra parte de la
-  // página, incluidos los paneles de detalle — solo la matriz es
-  // clickeable para seleccionar) limpia la selección. El propio click de
-  // selección hace stopPropagation() (ver heatmapMain.js), así que este
-  // listener nunca ve ESE click — el closest() de abajo es una segunda
-  // capa de seguridad, no la única.
-  function handleDocumentClick(event) {
-    if (isStale()) {
-      document.removeEventListener("click", handleDocumentClick);
-      return;
-    }
-    if (event.target.closest && event.target.closest('[data-ref="heatmap"] .heat-cell')) return;
-    if (!state.selectedDayKey && state.selectedHour == null) return;
-    state.selectedDayKey = "";
-    state.selectedHour = null;
-    render();
-  }
-  document.addEventListener("click", handleDocumentClick);
 
   els.fileTrigger.addEventListener("click", () => els.fileInput.click());
 

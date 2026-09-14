@@ -28,7 +28,6 @@ export function parseWorkbook(buffer) {
         hora: Number(row.hora),
         dia: Number(row.dia || date?.getDate()),
         mes: normalizeText(row.mes || MONTH_ORDER[date?.getMonth()]),
-        dia_semana_label: normalizeText(row.dia_semana_label),
         disponibilidad: Number(row.disponibilidad),
         tiempo: Number(row.tiempo),
         mediana_tiempo: Number(row.mediana_tiempo),
