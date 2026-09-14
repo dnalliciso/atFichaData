@@ -59,15 +59,31 @@ export function compactCellLabel(value, config) {
   return value.toFixed(0);
 }
 
+// Cada celda del heatmap es 1 hora = 60 minutos: usado para expresar el
+// downtime de esa hora (100 - disponibilidad) en minutos, tanto en el
+// mapa principal (cellLabelFor) como en el tooltip de los 3 gráficos
+// (tooltipContent.js).
+export const MINUTES_PER_HOUR = 60;
+
+export function downtimeMinutes(row) {
+  if (!Number.isFinite(row.disponibilidad)) return null;
+  return ((100 - row.disponibilidad) / 100) * MINUTES_PER_HOUR;
+}
+
 export function cellLabelFor(row, config) {
   if (specialStateFor(row.estado_bloque)) return "";
   if (config.useAnomalyLabel) return row.label_tiempo || "";
-  const label = compactCellLabel(row[config.valueKey], config);
-  // En Disponibilidad, el 100% es el caso normal/esperado en casi todas
-  // las celdas — mostrarlo en cada una satura el mapa sin aportar nada;
-  // solo interesa ver el número cuando hay una caída real.
-  if (config.valueKey === "disponibilidad" && label === "100") return "";
-  return label;
+  // En Disponibilidad se muestra el downtime en minutos de esa hora, no
+  // el porcentaje — el porcentaje es casi siempre 100 y saturaba el mapa
+  // sin aportar nada; el downtime en minutos es lo que realmente importa
+  // ver de un vistazo. Se oculta cuando redondea a 0 (sin caída real).
+  if (config.valueKey === "disponibilidad") {
+    const downtime = downtimeMinutes(row);
+    if (downtime == null) return "";
+    const label = downtime.toFixed(1);
+    return label === "0.0" ? "" : label;
+  }
+  return compactCellLabel(row[config.valueKey], config);
 }
 
 export function resolveCellColor(row, config) {

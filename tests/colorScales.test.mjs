@@ -9,6 +9,7 @@ const {
   specialStateFor,
   average,
   median,
+  downtimeMinutes,
   formatValue,
   compactCellLabel,
   cellLabelFor,
@@ -71,17 +72,25 @@ test("cellLabelFor no muestra etiqueta en celdas de estado especial", () => {
   assert.equal(cellLabelFor(row, reportConfig.response), "");
 });
 
-test("cellLabelFor usa el valor compacto en Disponibilidad", () => {
-  const row = { estado_bloque: "valor_base", disponibilidad: 98.4 };
-  assert.equal(cellLabelFor(row, reportConfig.availability), "98.4");
+test("downtimeMinutes calcula los minutos de caída de una hora (100% = 60 min)", () => {
+  assert.equal(downtimeMinutes({ disponibilidad: 40 }), 36);
 });
 
-test("cellLabelFor no muestra etiqueta cuando la disponibilidad es 100%", () => {
+test("downtimeMinutes devuelve null si la disponibilidad no es finita", () => {
+  assert.equal(downtimeMinutes({ disponibilidad: NaN }), null);
+});
+
+test("cellLabelFor en Disponibilidad muestra el downtime en minutos, no el porcentaje", () => {
+  const row = { estado_bloque: "valor_base", disponibilidad: 98.4 };
+  assert.equal(cellLabelFor(row, reportConfig.availability), "1.0");
+});
+
+test("cellLabelFor no muestra etiqueta cuando la disponibilidad es 100% (downtime 0)", () => {
   const row = { estado_bloque: "valor_base", disponibilidad: 100 };
   assert.equal(cellLabelFor(row, reportConfig.availability), "");
 });
 
-test("cellLabelFor no muestra etiqueta cuando la disponibilidad redondea a 100%", () => {
+test("cellLabelFor no muestra etiqueta cuando el downtime redondea a 0.0", () => {
   const row = { estado_bloque: "valor_base", disponibilidad: 99.96 };
   assert.equal(cellLabelFor(row, reportConfig.availability), "");
 });

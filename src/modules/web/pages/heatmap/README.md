@@ -39,6 +39,11 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
   distinguen negro de gris en la muestra actual.
 - La leyenda de degradado usa los colores reales del Excel como paradas
   (no recalcula ninguna escala propia).
+- Las celdas del mapa de Disponibilidad muestran el **downtime en
+  minutos** de esa hora (`(100 - disponibilidad) / 100 × 60`), no el
+  porcentaje — se oculta cuando redondea a 0 (sin caída real). El color
+  de la celda sigue viniendo de `color_disp` tal cual, sin cambios. El
+  mapa de Tiempo de respuesta no se toca (sigue usando `label_tiempo`).
 
 ## Gráfico de hover con pin
 
