@@ -24,7 +24,7 @@ esperadas — este archivo da solo la vista general.
 Desde la raíz del proyecto:
 
 ```bash
-python3 -m http.server 8080
+python3 serve.py 8080
 ```
 
 Luego abrir:
@@ -32,6 +32,13 @@ Luego abrir:
 ```text
 http://localhost:8080/
 ```
+
+`serve.py` es un wrapper de `python3 -m http.server` que agrega headers
+de "no cachear nada" a cada respuesta — sin esto, el navegador (sobre
+todo Chrome) suele quedarse con una versión vieja cacheada de los
+módulos JS/CSS aunque el archivo en disco ya haya cambiado. Si por
+algún motivo hace falta el server sin este agregado, `python3 -m
+http.server 8080` sigue funcionando igual que siempre.
 
 ## Agregar una página o un módulo nuevo
 
