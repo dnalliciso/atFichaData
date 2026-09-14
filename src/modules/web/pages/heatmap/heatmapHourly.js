@@ -74,4 +74,16 @@ export function render(rows, options) {
     .attr("y", height - 12)
     .attr("text-anchor", "middle")
     .text("Hora del día");
+
+  const selectedBar = sorted.find((d) => d.hora === state.selectedHour);
+  if (selectedBar) {
+    svg
+      .append("rect")
+      .attr("class", "selection-ring")
+      .attr("x", x(selectedBar.hora))
+      .attr("y", y)
+      .attr("width", x.bandwidth())
+      .attr("height", cellHeight)
+      .attr("rx", 4);
+  }
 }
