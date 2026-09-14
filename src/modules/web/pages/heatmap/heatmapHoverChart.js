@@ -1,4 +1,4 @@
-import { reportConfig, resolveCellColor, specialStateFor, average, median } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor, average, median, responseValueOf } from "./colorScales.js";
 import { dateKey } from "../../../../core/excel.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
@@ -6,6 +6,7 @@ import { createWeekPanel } from "./heatmapWeekPanel.js";
 import { createPeriodPanel } from "./heatmapPeriodPanel.js";
 import { createAllDaysPanel } from "./heatmapAllDaysPanel.js";
 import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
+import { renderLineBridges } from "./heatmapLineBridge.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const DEFAULT_THRESHOLD = 95;
@@ -16,7 +17,7 @@ const TRANSITION_MS = 500;
 // más alto no toque el borde del gráfico. Sin filas válidas, cae a
 // [0, 1] en vez de [0, NaN].
 export function computeResponseDomain(rows) {
-  const values = rows.map((row) => row.tiempo).filter(Number.isFinite);
+  const values = rows.map(responseValueOf).filter(Number.isFinite);
   if (!values.length) return [0, 1];
   const max = Math.max(...values);
   return [0, max > 0 ? max * 1.1 : 1];
@@ -130,9 +131,11 @@ export function createHoverChart(options) {
   const pointsG = svg.append("g").attr("class", "hover-chart-points");
   const lineGenerator = d3
     .line()
+    .defined((row) => Number.isFinite(responseValueOf(row)))
     .x((row) => x(row.hora) + x.bandwidth() / 2)
-    .y((row) => yLine(Number.isFinite(row.tiempo) ? row.tiempo : 0));
+    .y((row) => yLine(responseValueOf(row)));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
+  const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
   const refLineEls = appendResponseRefLines(svg, margin, width);
 
   // Umbral arrastrable — mismo patrón que renderGradientLegend en
@@ -266,17 +269,21 @@ export function createHoverChart(options) {
       );
 
     linePath.datum(sorted).transition().duration(TRANSITION_MS).attr("d", lineGenerator);
+    renderLineBridges(bridgeG, "hover-chart-line-bridge", sorted, responseValueOf, (row) => x(row.hora) + x.bandwidth() / 2, (value) => yLine(value));
 
     pointsG
       .selectAll("circle")
-      .data(sorted, (row) => row.hora)
+      .data(
+        sorted.filter((row) => Number.isFinite(responseValueOf(row))),
+        (row) => row.hora,
+      )
       .join(
         (enter) =>
           enter
             .append("circle")
             .attr("class", "hover-chart-point")
             .attr("cx", (row) => x(row.hora) + x.bandwidth() / 2)
-            .attr("cy", (row) => yLine(Number.isFinite(row.tiempo) ? row.tiempo : 0))
+            .attr("cy", (row) => yLine(responseValueOf(row)))
             .attr("r", 3)
             .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row)))
             .on("mousemove", (event) => moveTooltip(tooltipEl, event))
@@ -287,7 +294,7 @@ export function createHoverChart(options) {
               .transition()
               .duration(TRANSITION_MS)
               .attr("cx", (row) => x(row.hora) + x.bandwidth() / 2)
-              .attr("cy", (row) => yLine(Number.isFinite(row.tiempo) ? row.tiempo : 0)),
+              .attr("cy", (row) => yLine(responseValueOf(row))),
           ),
         (exit) => exit.remove(),
       );

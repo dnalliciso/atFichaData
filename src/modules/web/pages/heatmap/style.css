@@ -208,6 +208,18 @@
   stroke-width: 2px;
 }
 
+/* Segmento que "puentea" un bloque de estado especial (Caída Total /
+   Datos no válidos) en la serie de tiempo de respuesta — mismo color que
+   la línea real, pero punteado, para distinguir "esto es un salto sobre
+   un bloque sin dato real" de la línea continua normal. Ver
+   heatmapLineBridge.js. */
+.hover-chart-line-bridge {
+  stroke: var(--accent-fill);
+  stroke-width: 2px;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
 .hover-chart-point {
   fill: var(--accent-fill);
 }

@@ -3,6 +3,7 @@ import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/toolti
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { shortDateLabel } from "../../../../core/excel.js";
 import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
+import { renderLineBridges } from "./heatmapLineBridge.js";
 
 function barValue(row) {
   if (specialStateFor(row.estado_bloque)) return 100;
@@ -145,6 +146,14 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
       .y((cell) => yLine(cell.row.tiempo));
 
     svg.append("path").attr("class", "hover-chart-line").attr("fill", "none").datum(cells).attr("d", lineGenerator);
+    renderLineBridges(
+      svg.append("g").attr("class", "hover-chart-line-bridges"),
+      "hover-chart-line-bridge",
+      cells,
+      (cell) => cell.row.tiempo,
+      (cell) => x(cell.dateKeyValue) + x.bandwidth() / 2,
+      (value) => yLine(value),
+    );
 
     svg
       .append("g")

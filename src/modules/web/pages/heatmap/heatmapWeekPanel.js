@@ -3,6 +3,7 @@ import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/toolti
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey } from "../../../../core/excel.js";
 import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
+import { renderLineBridges } from "./heatmapLineBridge.js";
 
 // Letra de día de semana a partir de Date#getDay() (0=domingo…6=sábado) —
 // se deriva de la fecha, no de una columna del Excel.
@@ -132,6 +133,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .x((cell) => x(cell.label) + x.bandwidth() / 2)
     .y((cell) => yLine(cell.row.tiempo));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
+  const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
   const refLineEls = appendResponseRefLines(svg, margin, width);
 
   function show(allRows, dayKey, hour, stats) {
@@ -198,6 +200,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
       );
 
     linePath.datum(cells).transition().duration(TRANSITION_MS).attr("d", lineGenerator);
+    renderLineBridges(bridgeG, "hover-chart-line-bridge", cells, (cell) => cell.row?.tiempo, (cell) => x(cell.label) + x.bandwidth() / 2, (value) => yLine(value));
 
     pointsG
       .selectAll("circle")

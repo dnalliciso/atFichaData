@@ -65,6 +65,17 @@ export function compactCellLabel(value, config) {
 // (tooltipContent.js).
 export const MINUTES_PER_HOUR = 60;
 
+// Tiempo de respuesta "real" de una fila: NaN para estados especiales
+// (Caída Total / Datos no válidos) aunque su columna `tiempo` traiga 0 en
+// el Excel — ese 0 es un placeholder, no una medición real. Sin esto, la
+// línea de tiempo de respuesta de los gráficos de hover se iba en picada
+// a 0 en esos bloques en vez de cortarse / puentearse (ver
+// heatmapLineBridge.js).
+export function responseValueOf(row) {
+  if (specialStateFor(row.estado_bloque)) return NaN;
+  return row.tiempo;
+}
+
 export function downtimeMinutes(row) {
   if (!Number.isFinite(row.disponibilidad)) return null;
   return ((100 - row.disponibilidad) / 100) * MINUTES_PER_HOUR;
