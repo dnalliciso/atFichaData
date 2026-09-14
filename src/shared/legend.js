@@ -14,12 +14,18 @@ export function renderCategoryLegend(container, items) {
 }
 
 export function renderGradientLegend(svg, options) {
-  const { colorScale, domain, config, margin, width, chartHeight, gradientId, onScrub } = options;
+  const { colorScale, domain, config, margin, width, chartHeight, gradientId, onScrub, offsetX = 0 } = options;
   const [min, max] = domain;
   const barWidth = 16;
   const barHeight = Math.max(120, chartHeight - margin.top - 30);
-  const x = width - margin.right + 40;
+  const x = width - margin.right + 40 + offsetX;
   const y = margin.top;
+
+  // Agrupa todo (barra, textos, handle) bajo una sola clase para que el
+  // caller pueda detectar "el click fue dentro de este slider" con un
+  // closest(".gradient-legend") — hace falta para el reset por click
+  // afuera, sin que clickear la barra/handle cuente como "afuera".
+  svg = svg.append("g").attr("class", "gradient-legend");
 
   const defs = svg.append("defs");
   const gradient = defs
@@ -75,7 +81,7 @@ export function renderGradientLegend(svg, options) {
     .attr("text-anchor", "start")
     .text((d) => `${d.toFixed(config.unit === "%" ? 1 : 0)}${config.unit}`);
 
-  if (!onScrub) return;
+  if (!onScrub) return {};
 
   const handleGroup = svg.append("g").attr("class", "legend-handle");
   let handleY = y;
@@ -124,4 +130,19 @@ export function renderGradientLegend(svg, options) {
     .on("end", () => handle.classed("dragging", false));
 
   handle.call(drag);
+
+  // Vuelve el handle a su posición inicial (sin filtro activo) — el
+  // caller (heatmapMain.js) es quien limpia la opacidad de las celdas,
+  // esta función solo repone el aspecto visual del slider. Se usa para
+  // "click afuera del slider desactiva el filtro", ya que sin esto el
+  // filtro quedaba fijo para siempre en el último valor arrastrado, sin
+  // forma de volver a ver todo.
+  function reset() {
+    handleY = y;
+    handle.attr("cy", handleY);
+    connector.attr("y1", handleY).attr("y2", handleY).attr("opacity", 0);
+    valueLabel.attr("opacity", 0);
+  }
+
+  return { reset };
 }

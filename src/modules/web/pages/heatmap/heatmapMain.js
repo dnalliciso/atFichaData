@@ -8,11 +8,20 @@ import {
   computeHoverOpacity,
   specialStateFor,
   buildEmpiricalGradient,
+  downtimeMinutes,
 } from "./colorScales.js";
 import { renderGradientLegend } from "../../../../shared/legend.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const MIN_RESERVED_DAYS = 31;
+const DOWNTIME_CONFIG = { unit: " min", decimals: 1 };
+
+// Referencia al listener de "click afuera de los sliders" del render
+// anterior — render() es una función de módulo sin fase de construcción
+// propia (a diferencia de heatmapHoverChart.js), así que hay que
+// desengancharlo a mano en cada llamada para no acumular uno nuevo por
+// cada render (cambio de Objetivo/Período/pestaña).
+let detachOutsideClick = null;
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -55,6 +64,11 @@ export function render(rows, options) {
   const config = reportConfig[state.report];
   const data = aggregateHourlyByDay(rows);
 
+  if (detachOutsideClick) {
+    detachOutsideClick();
+    detachOutsideClick = null;
+  }
+
   const dateEntries = Array.from(
     d3.rollup(
       rows,
@@ -79,9 +93,16 @@ export function render(rows, options) {
   const reservedDays = Math.max(MIN_RESERVED_DAYS, lastOffset + 1);
 
   const gradient = buildEmpiricalGradient(data, config);
+  const isAvailability = state.report === "availability";
+  const downtimeValues = data.map((d) => downtimeMinutes(d)).filter(Number.isFinite);
+  const maxDowntime = downtimeValues.length ? Math.max(...downtimeValues) : 0;
+  const showDowntimeLegend = isAvailability && maxDowntime > 0;
 
   const hours = d3.range(0, 24);
-  const margin = { top: 40, right: 116, bottom: 60, left: 78 };
+  // Disponibilidad muestra 2 sliders (disponibilidad + downtime) y
+  // necesita más margen a la derecha para que el segundo no se pise con
+  // el primero; Respuesta sigue con 1 solo.
+  const margin = { top: 40, right: showDowntimeLegend ? 220 : 116, bottom: 60, left: 78 };
   const cellWidth = 38;
   const cellHeight = 17;
   const width = Math.max(720, margin.left + hours.length * cellWidth + margin.right);
@@ -187,21 +208,64 @@ export function render(rows, options) {
     .attr("text-anchor", "middle")
     .text((d) => (x.bandwidth() >= 28 ? cellLabelFor(d, config) : ""));
 
+  const filterableCells = cells.filter((d) => !specialStateFor(d.estado_bloque));
+  let disponibilidadControls = null;
+  let downtimeControls = null;
+
   if (gradient) {
-    const gradientId = `legend-${state.report}`;
-    const filterableCells = cells.filter((d) => !specialStateFor(d.estado_bloque));
-    renderGradientLegend(svg, {
+    const span = gradient.domain[1] - gradient.domain[0];
+    disponibilidadControls = renderGradientLegend(svg, {
       colorScale: gradient.colorAt,
       domain: gradient.domain,
       config,
       margin,
       width,
       chartHeight,
-      gradientId,
+      gradientId: `legend-${state.report}`,
       onScrub: (value) => {
-        const span = gradient.domain[1] - gradient.domain[0];
         filterableCells.select("rect").attr("fill-opacity", (d) => computeHoverOpacity(d[config.valueKey], value, span));
       },
     });
+  }
+
+  // Segundo slider, solo en Disponibilidad: mismo mecanismo que el de
+  // arriba pero contra el downtime en minutos de cada celda en vez del
+  // porcentaje — no tiene un color propio en el Excel (siempre viene de
+  // disponibilidad), así que usa un degradado neutro de un solo tono en
+  // vez de los colores reales de celda.
+  if (showDowntimeLegend) {
+    const downtimeColorScale = d3.scaleLinear().domain([0, maxDowntime]).range(["#efe6fb", "#5c02a0"]);
+    downtimeControls = renderGradientLegend(svg, {
+      colorScale: downtimeColorScale,
+      domain: [0, maxDowntime],
+      config: DOWNTIME_CONFIG,
+      margin,
+      width,
+      chartHeight,
+      gradientId: "legend-availability-downtime",
+      offsetX: 140,
+      onScrub: (value) => {
+        filterableCells
+          .select("rect")
+          .attr("fill-opacity", (d) => computeHoverOpacity(downtimeMinutes(d) ?? 0, value, maxDowntime));
+      },
+    });
+  }
+
+  // Click afuera de cualquiera de los sliders (incluye clickear una
+  // celda del mapa) suelta el filtro — sin esto, arrastrar un handle
+  // dejaba el filtro pegado para siempre sin forma de volver a ver todas
+  // las celdas. Se reengancha en cada render (ver detachOutsideClick más
+  // arriba) porque `svg`/`filterableCells` se reconstruyen de cero cada
+  // vez.
+  if (disponibilidadControls || downtimeControls) {
+    const handleOutsideClick = (event) => {
+      if (event.target.closest(".gradient-legend")) return;
+      disponibilidadControls?.reset();
+      downtimeControls?.reset();
+      filterableCells.select("rect").attr("fill-opacity", 1);
+    };
+    document.addEventListener("click", handleOutsideClick);
+    detachOutsideClick = () => document.removeEventListener("click", handleOutsideClick);
   }
 }

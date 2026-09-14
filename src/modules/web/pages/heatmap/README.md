@@ -45,6 +45,21 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
   de la celda sigue viniendo de `color_disp` tal cual, sin cambios. El
   mapa de Tiempo de respuesta no se toca (sigue usando `label_tiempo`).
 
+### Sliders del mapa principal (filtro por arrastre)
+
+A la derecha del mapa hay un slider vertical arrastrable (círculo sobre
+una barra de degradado) que resalta las celdas cuyo valor cae cerca de
+donde está el handle — el resto baja a opacidad 0. En la pestaña
+**Disponibilidad** hay dos: uno por el % de disponibilidad (colores
+reales de celda) y otro por el downtime en minutos (degradado neutro
+violeta, ya que el downtime no tiene un color propio en el Excel). En
+**Respuesta** sigue habiendo solo el de tiempo de respuesta.
+
+Solo un filtro está activo a la vez: mover un slider desactiva el efecto
+del otro (aunque su handle se quede visualmente donde lo dejaste). Click
+en cualquier lugar fuera de los sliders — incluida una celda del mapa —
+suelta el filtro y vuelve a mostrar todas las celdas.
+
 ## Gráfico de hover con pin
 
 Debajo del mapa principal, en una grilla de 3 columnas, hay 3 gráficos
