@@ -2,6 +2,8 @@ import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.j
 import { dateKey } from "../../../../core/excel.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
+import { createWeekPanel } from "./heatmapWeekPanel.js";
+import { createPeriodPanel } from "./heatmapPeriodPanel.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const DEFAULT_THRESHOLD = 95;
@@ -27,7 +29,8 @@ function barValue(row) {
   return Number.isFinite(row.disponibilidad) ? row.disponibilidad : 0;
 }
 
-export function createHoverChart(hoverEl, heatmapEl, tooltipEl) {
+export function createHoverChart(options) {
+  const { hoverEl, weekEl, periodEl, heatmapEl, tooltipEl } = options;
   const margin = { top: 44, right: 56, bottom: 34, left: 40 };
   const width = 680;
   const height = 320;
@@ -169,9 +172,15 @@ export function createHoverChart(hoverEl, heatmapEl, tooltipEl) {
 
   moveThreshold(yBar(DEFAULT_THRESHOLD));
 
+  const weekPanel = createWeekPanel(weekEl, tooltipEl);
+  const periodPanel = createPeriodPanel(periodEl, tooltipEl);
+
   let currentRows = [];
+  let allObjectiveRows = [];
   let shownDayKey = null;
+  let shownHour = null;
   let pinnedDayKey = null;
+  let pinnedHour = null;
 
   // Resalta (o limpia, si dayKeyToHighlight es null) la fila entera del
   // mapa principal que corresponde al día fijado. Se vuelve a llamar
@@ -265,44 +274,64 @@ export function createHoverChart(hoverEl, heatmapEl, tooltipEl) {
     if (sorted[0]) titleEl.textContent = `${sorted[0].dia} ${sorted[0].mes}`;
   }
 
+  function refreshSubPanels(dayKey, hour) {
+    weekPanel.show(allObjectiveRows, dayKey, hour);
+    periodPanel.show(currentRows, dayKey, hour);
+  }
+
   function handleMove(event) {
     if (pinnedDayKey != null) return;
     const datum = d3.select(event.target).datum();
     if (!datum || datum.dayKey == null) return;
-    if (datum.dayKey === shownDayKey) return;
-    showDay(datum.dayKey);
+    if (datum.dayKey === shownDayKey && datum.hora === shownHour) return;
+
+    if (datum.dayKey !== shownDayKey && !showDay(datum.dayKey)) return;
+    shownDayKey = datum.dayKey;
+    shownHour = datum.hora;
+    refreshSubPanels(shownDayKey, shownHour);
   }
 
   function handleClick(event) {
     const datum = d3.select(event.target).datum();
     if (!datum || datum.dayKey == null) return;
 
-    if (pinnedDayKey === datum.dayKey) {
+    if (pinnedDayKey === datum.dayKey && pinnedHour === datum.hora) {
       pinnedDayKey = null;
+      pinnedHour = null;
       setPinnedHighlight(null);
       return;
     }
 
     if (datum.dayKey !== shownDayKey && !showDay(datum.dayKey)) return;
+    shownDayKey = datum.dayKey;
+    shownHour = datum.hora;
+    refreshSubPanels(shownDayKey, shownHour);
     pinnedDayKey = datum.dayKey;
+    pinnedHour = datum.hora;
     setPinnedHighlight(pinnedDayKey);
   }
 
   heatmapEl.addEventListener("mousemove", handleMove);
   heatmapEl.addEventListener("click", handleClick);
 
-  function update(rows) {
+  function update(rows, allRows) {
     currentRows = rows;
+    allObjectiveRows = allRows;
     yLine = d3.scaleLinear().domain(computeResponseDomain(rows)).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
 
     pinnedDayKey = null;
+    pinnedHour = null;
     shownDayKey = null;
+    shownHour = null;
     setPinnedHighlight(null);
     titleEl.textContent = "";
     emptyEl.hidden = false;
     svgNode.hidden = true;
+
+    weekPanel.reset();
+    periodPanel.reset();
   }
 
   return { update };
