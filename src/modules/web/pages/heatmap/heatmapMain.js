@@ -53,7 +53,7 @@ function aggregateHourlyByDay(rows) {
 }
 
 export function render(rows, options) {
-  const { heatmapEl, tooltipEl, state, onCellSelected } = options;
+  const { heatmapEl, tooltipEl, state } = options;
   const config = reportConfig[state.report];
   const data = aggregateHourlyByDay(rows);
 
@@ -182,14 +182,7 @@ export function render(rows, options) {
     .attr("fill", (d) => resolveCellColor(d, config))
     .on("mouseenter", (event, d) => showTooltip(tooltipEl, event, hourlyTooltipHtml(d, config)))
     .on("mousemove", (event) => moveTooltip(tooltipEl, event))
-    .on("mouseleave", () => hideTooltip(tooltipEl))
-    .on("click", (event, d) => {
-      // Sin esto, el click bubblea hasta document y el listener de
-      // "click afuera de la matriz limpia la selección" (index.page.js)
-      // se dispara justo después de haberla seteado, anulándola.
-      event.stopPropagation();
-      onCellSelected(d.dayKey, d.hora);
-    });
+    .on("mouseleave", () => hideTooltip(tooltipEl));
 
   cells
     .append("text")
@@ -198,40 +191,6 @@ export function render(rows, options) {
     .attr("y", y.bandwidth() / 2 + 4)
     .attr("text-anchor", "middle")
     .text((d) => (x.bandwidth() >= 28 ? cellLabelFor(d, config) : ""));
-
-  const selectedCell = data.find((d) => d.dayKey === state.selectedDayKey && d.hora === state.selectedHour);
-  if (selectedCell) {
-    // Borde de la fila completa (el día): ancho de todo el eje de horas.
-    svg
-      .append("rect")
-      .attr("class", "selection-band")
-      .attr("x", margin.left)
-      .attr("y", rowY(selectedCell.date))
-      .attr("width", width - margin.left - margin.right)
-      .attr("height", y.bandwidth())
-      .attr("rx", 4);
-
-    // Borde de la columna completa (la hora): alto de todo el eje de días.
-    svg
-      .append("rect")
-      .attr("class", "selection-band")
-      .attr("x", x(selectedCell.hora))
-      .attr("y", margin.top)
-      .attr("width", x.bandwidth())
-      .attr("height", chartHeight - margin.top)
-      .attr("rx", 4);
-
-    // Anillo de la celda exacta — se dibuja último (queda arriba en el
-    // orden de pintado SVG) para que los dos bordes de arriba no lo tapen.
-    svg
-      .append("rect")
-      .attr("class", "selection-ring")
-      .attr("x", x(selectedCell.hora))
-      .attr("y", rowY(selectedCell.date))
-      .attr("width", x.bandwidth())
-      .attr("height", y.bandwidth())
-      .attr("rx", 4);
-  }
 
   if (gradient) {
     const gradientId = `legend-${state.report}`;
