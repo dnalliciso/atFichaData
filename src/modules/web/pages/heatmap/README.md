@@ -40,27 +40,29 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
 - La leyenda de degradado usa los colores reales del Excel como paradas
   (no recalcula ninguna escala propia).
 
-## Tooltip de hover con gráfico combinado
+## Gráfico de hover con pin
 
-Pasar el mouse sobre cualquier celda del mapa principal muestra un
-tooltip grande con un gráfico combinado de las 24 horas de ese día:
-barras de disponibilidad (coloreadas igual que las celdas del mapa) y una
-línea de tiempo de respuesta superpuesta. Cambiar de día (mover el mouse
-a otra fila) anima el gráfico hacia los nuevos datos en vez de
-reemplazarlos de golpe. Sacar el mouse del mapa (y del propio tooltip)
-lo oculta.
+A la derecha del mapa principal hay un gráfico combinado (barras de
+disponibilidad + línea de tiempo de respuesta, 24 horas) que se
+actualiza en vivo al pasar el mouse por una fila del mapa — con
+transición animada al cambiar de día, no un reemplazo de golpe.
 
-El tooltip de texto chico que aparece al detenerse sobre una celda
-puntual (con el valor exacto de esa hora) sigue funcionando igual que
-antes — son complementarios, no se reemplazan entre sí.
+Clickear una celda **fija** el gráfico en ese día: deja de reaccionar
+al hover, y esa fila queda resaltada en el mapa. Clickear la misma
+celda de nuevo lo suelta (vuelve al modo hover-en-vivo). Clickear otra
+celda distinta re-fija al nuevo día.
+
+El valor exacto de cada hora (disponibilidad, tiempo de respuesta,
+estado) se consigue pasando el mouse sobre las barras o los puntos del
+propio gráfico — funciona tanto en modo vivo como fijado. Las celdas
+del mapa principal ya no tienen ese tooltip de texto (se mudó acá).
 
 Sobre las barras de disponibilidad hay un círculo arrastrable (mismo
 mecanismo que el de la leyenda del mapa principal) que traza una línea
 de referencia horizontal, para comparar a ojo "hasta dónde llega" cada
 hora contra un umbral elegido. Arranca en 95% y vuelve a ese valor si
-cambiás Objetivo o Período.
+cambiás Objetivo o Período (eso también suelta el pin, si había uno).
 
 El selector "Informe: Disponibilidad / Respuesta" solo cambia cómo se
-colorean las celdas del mapa principal — el tooltip siempre muestra
-ambas métricas (disponibilidad y tiempo de respuesta) juntas, sin
-importar la pestaña activa.
+colorean las celdas del mapa principal — el gráfico siempre muestra
+ambas métricas juntas, sin importar la pestaña activa.
