@@ -57,6 +57,41 @@
   pointer-events: none;
 }
 
+/* Anillo de selección: un <rect> extra dibujado ENCIMA de la celda ya
+   pintada (no una clase agregada al rect de datos), para no pisar el
+   fill real de la celda ni chocar con .pulse-alert (esa anima
+   fill-opacity en negro/rojo — es la alerta de "Caída Total", una
+   semántica distinta a "esto es lo que seleccionaste"). Por eso anima
+   stroke/stroke-width en vez de fill. */
+@keyframes pulse-select {
+  0%,
+  100% {
+    stroke-opacity: 1;
+    stroke-width: 2px;
+  }
+  50% {
+    stroke-opacity: 0.4;
+    stroke-width: 4px;
+  }
+}
+
+.selection-ring {
+  fill: none;
+  stroke: var(--accent-fill);
+  pointer-events: none;
+  animation: pulse-select 1.2s ease-in-out infinite;
+}
+
+/* Día sin datos dentro de la semana de "Detalle hora" — placeholder
+   punteado, sin la clase .heat-cell (para no heredar su cursor:pointer
+   ni el hover con stroke navy, que no aplican a una celda sin datos). */
+.heat-cell--empty {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1px;
+  stroke-dasharray: 4 3;
+}
+
 .month-bar {
   fill: var(--accent-fill);
   opacity: 0.85;
