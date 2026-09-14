@@ -86,7 +86,11 @@ const TEMPLATE = `
       <div data-ref="errorBox" class="error-box" hidden></div>
       <div class="heatmap-row">
         <div data-ref="heatmap" class="chart-wrap" aria-label="Heatmap principal"></div>
-        <div data-ref="hoverChart" class="hover-chart"></div>
+        <div class="hover-chart-stack">
+          <div data-ref="hoverChart" class="hover-chart"></div>
+          <div data-ref="hoverWeekChart" class="hover-chart"></div>
+          <div data-ref="hoverPeriodChart" class="hover-chart"></div>
+        </div>
       </div>
 
       <section class="records-panel">
@@ -120,7 +124,13 @@ export function mount(container) {
   });
 
   const tooltipEl = document.querySelector("#tooltip");
-  const hoverChart = createHoverChart(els.hoverChart, els.heatmap, tooltipEl);
+  const hoverChart = createHoverChart({
+    hoverEl: els.hoverChart,
+    weekEl: els.hoverWeekChart,
+    periodEl: els.hoverPeriodChart,
+    heatmapEl: els.heatmap,
+    tooltipEl,
+  });
 
   function setRows(rows) {
     if (!rows.length) {
@@ -187,7 +197,7 @@ export function mount(container) {
     renderCategoryLegend(els.legend, Object.values(SPECIAL_STATES));
 
     heatmapMain.render(rows, { heatmapEl: els.heatmap, state });
-    hoverChart.update(rows);
+    hoverChart.update(rows, getFilteredRows(false));
 
     eventsPanel.render(rows, els.eventsList);
   }
