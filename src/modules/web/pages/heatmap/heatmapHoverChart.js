@@ -100,14 +100,11 @@ export function createHoverChart(hoverEl, heatmapEl) {
     .attr("text-anchor", "end")
     .text((tick) => `${tick}%`);
 
-  svg.append("text").attr("class", "axis-label").attr("x", margin.left).attr("y", margin.top - 24).text("Disponibilidad (%)");
-  svg
-    .append("text")
-    .attr("class", "axis-label")
-    .attr("x", width - margin.right)
-    .attr("y", margin.top - 24)
-    .attr("text-anchor", "end")
-    .text("Tiempo (s)");
+  // Los títulos de cada eje ("Disponibilidad (%)"/"Tiempo (s)") se
+  // dejaron afuera a propósito: la leyenda de arriba ya nombra las dos
+  // series, y los ticks de cada eje ya llevan su unidad ("80%", "40.0s")
+  // — un título de eje en la misma fila que la leyenda se pisaba con
+  // ella (misma altura, mismo lado izquierdo).
 
   // Eje Y derecho (tiempo de respuesta) — su dominio cambia con el
   // filtro activo (ver update()), así que se re-dibuja desde una función.

@@ -127,7 +127,12 @@
   z-index: 20;
   /* min() en vez de un ancho fijo: la misma clase de bug de overflow que
      ya corregimos dos veces esta sesión en otras páginas, acá evitada
-     desde el CSS en vez de parcheada después. */
+     desde el CSS en vez de parcheada después. Necesita el `width` además
+     del `max-width`: un position:fixed sin ancho propio se calcula por
+     shrink-to-fit, y el <svg width:100%> de adentro no tiene de qué
+     "100%" partir en ese cálculo — sin esto, el tooltip renderizaba a
+     ~326px en vez de los 680px del viewBox del gráfico. */
+  width: 680px;
   max-width: min(680px, calc(100vw - 32px));
   background: var(--panel);
   border: 1px solid var(--line);
