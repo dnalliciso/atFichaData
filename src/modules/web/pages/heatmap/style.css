@@ -38,7 +38,7 @@
 }
 
 .heat-cell {
-  cursor: pointer;
+  cursor: default;
   stroke: var(--chart-stroke);
   stroke-width: 0.8px;
 }
@@ -56,54 +56,6 @@
   pointer-events: none;
 }
 
-/* Anillo de selección: un <rect> extra dibujado ENCIMA de la celda ya
-   pintada (no una clase agregada al rect de datos), para no pisar el
-   fill real de la celda ni chocar con .pulse-alert (esa anima
-   fill-opacity en negro/rojo — es la alerta de "Caída Total", una
-   semántica distinta a "esto es lo que seleccionaste"). Por eso anima
-   stroke/stroke-width en vez de fill. */
-@keyframes pulse-select {
-  0%,
-  100% {
-    stroke-opacity: 1;
-    stroke-width: 2px;
-  }
-  50% {
-    stroke-opacity: 0.4;
-    stroke-width: 4px;
-  }
-}
-
-.selection-ring {
-  fill: none;
-  stroke: var(--accent-fill);
-  pointer-events: none;
-  animation: pulse-select 1.2s ease-in-out infinite;
-}
-
-/* Borde de fila/columna: dos <rect> extra (uno del ancho de toda la fila
-   del día, otro del alto de toda la columna de la hora), pulsantes en
-   amarillo — mismo mecanismo que .selection-ring (reusa @keyframes
-   pulse-select, que solo anima stroke, nunca color), pero un tono
-   distinto para no confundirse con el anillo violeta de la celda exacta
-   ni con .pulse-alert (esa es la alerta de "Caída Total"). */
-.selection-band {
-  fill: none;
-  stroke: #ffb300;
-  pointer-events: none;
-  animation: pulse-select 1.2s ease-in-out infinite;
-}
-
-/* Día sin datos dentro de la semana de "Detalle hora" — placeholder
-   punteado, sin la clase .heat-cell (para no heredar su cursor:pointer
-   ni el hover con stroke navy, que no aplican a una celda sin datos). */
-.heat-cell--empty {
-  fill: none;
-  stroke: var(--line);
-  stroke-width: 1px;
-  stroke-dasharray: 4 3;
-}
-
 .month-bar {
   fill: var(--accent-fill);
   opacity: 0.85;
@@ -117,29 +69,8 @@
   pointer-events: none;
 }
 
-.detail-grid > * {
-  /* Sin esto, el grid item que envuelve el gráfico de detalle horario no
-     se encoge por debajo del ancho intrínseco de su SVG (~680px) — pese a
-     que .chart-wrap tiene overflow-x:auto, el item entero empujaba el
-     grid y con él la página completa a lo ancho. */
-  min-width: 0;
-}
-
-.detail-stack {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-  min-width: 0;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
-  gap: var(--space-4);
-  margin-top: var(--space-4);
-}
-
 .records-panel {
+  margin-top: var(--space-4);
   padding: var(--space-4);
   background: var(--panel);
   border: 1px solid var(--line);
@@ -180,8 +111,58 @@
 
 @media (max-width: 980px) {
   .summary-strip,
-  .workspace,
-  .detail-grid {
+  .workspace {
     grid-template-columns: 1fr;
   }
+}
+
+/* Tooltip de hover del mapa principal: gráfico combinado (barra +
+   línea), grande — deliberadamente NO reusa .tooltip (esa es global,
+   compartida por src/shared/tooltip.js y otras páginas para tooltips de
+   texto chicos; reusarla acá arrastraría su max-width:260px o, peor,
+   un cambio futuro a .tooltip rompería este componente sin que se note
+   en el código de acá). */
+.hover-chart {
+  position: fixed;
+  z-index: 20;
+  /* min() en vez de un ancho fijo: la misma clase de bug de overflow que
+     ya corregimos dos veces esta sesión en otras páginas, acá evitada
+     desde el CSS en vez de parcheada después. */
+  max-width: min(680px, calc(100vw - 32px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(11, 22, 54, 0.22);
+  padding: var(--space-3);
+}
+
+.hover-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hover-chart-title {
+  margin: 0 0 var(--space-2);
+  color: var(--navy);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.hover-chart-legend-swatch {
+  fill: #65b636;
+}
+
+.hover-chart-legend-line {
+  stroke: var(--accent-fill);
+  fill: var(--accent-fill);
+}
+
+.hover-chart-line {
+  stroke: var(--accent-fill);
+  stroke-width: 2px;
+}
+
+.hover-chart-point {
+  fill: var(--accent-fill);
 }
