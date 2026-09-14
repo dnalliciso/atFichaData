@@ -184,12 +184,9 @@ export function mount(container) {
     });
 
     const config = reportConfig[state.report];
-    const dates = rows.map((row) => row.fecha).filter(Boolean);
-    const years = Array.from(new Set(dates.map((date) => date.getFullYear()))).sort();
-    const yearLabel = years.length === 1 ? years[0] : years.join("-");
 
     els.reportKicker.textContent = config.kicker;
-    els.reportTitle.textContent = `${config.kicker} — ${yearLabel || "período"}`;
+    els.reportTitle.textContent = config.kicker;
     els.reportSubtitle.textContent =
       state.report === "availability"
         ? "Eje X: hora del día. Eje Y: día del período. Cada celda muestra disponibilidad."
