@@ -173,7 +173,6 @@ export function render(rows, options) {
     .attr("class", (d) => {
       const special = specialStateFor(d.estado_bloque);
       const classes = ["heat-cell"];
-      if (state.selectedDayKey === d.dayKey) classes.push("selected");
       if (special?.pulse) classes.push("pulse-alert");
       return classes.join(" ");
     })
@@ -202,6 +201,28 @@ export function render(rows, options) {
 
   const selectedCell = data.find((d) => d.dayKey === state.selectedDayKey && d.hora === state.selectedHour);
   if (selectedCell) {
+    // Borde de la fila completa (el día): ancho de todo el eje de horas.
+    svg
+      .append("rect")
+      .attr("class", "selection-band")
+      .attr("x", margin.left)
+      .attr("y", rowY(selectedCell.date))
+      .attr("width", width - margin.left - margin.right)
+      .attr("height", y.bandwidth())
+      .attr("rx", 4);
+
+    // Borde de la columna completa (la hora): alto de todo el eje de días.
+    svg
+      .append("rect")
+      .attr("class", "selection-band")
+      .attr("x", x(selectedCell.hora))
+      .attr("y", margin.top)
+      .attr("width", x.bandwidth())
+      .attr("height", chartHeight - margin.top)
+      .attr("rx", 4);
+
+    // Anillo de la celda exacta — se dibuja último (queda arriba en el
+    // orden de pintado SVG) para que los dos bordes de arriba no lo tapen.
     svg
       .append("rect")
       .attr("class", "selection-ring")
