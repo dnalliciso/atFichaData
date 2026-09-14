@@ -1,5 +1,7 @@
 import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.js";
 import { dateKey } from "../../../../core/excel.js";
+import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
+import { hourlyTooltipHtml } from "./tooltipContent.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const DEFAULT_THRESHOLD = 95;
@@ -25,18 +27,20 @@ function barValue(row) {
   return Number.isFinite(row.disponibilidad) ? row.disponibilidad : 0;
 }
 
-export function createHoverChart(hoverEl, heatmapEl) {
+export function createHoverChart(hoverEl, heatmapEl, tooltipEl) {
   const margin = { top: 44, right: 56, bottom: 34, left: 40 };
   const width = 680;
   const height = 320;
 
-  hoverEl.hidden = true;
   hoverEl.innerHTML = `
     <div class="hover-chart-title"></div>
-    <svg viewBox="0 0 ${width} ${height}"></svg>
+    <div class="empty-state" data-ref="hoverChartEmpty">Pasá el mouse sobre una celda del mapa para ver el detalle del día.</div>
+    <svg viewBox="0 0 ${width} ${height}" hidden></svg>
   `;
   const titleEl = hoverEl.querySelector(".hover-chart-title");
+  const emptyEl = hoverEl.querySelector("[data-ref='hoverChartEmpty']");
   const svg = d3.select(hoverEl).select("svg");
+  const svgNode = svg.node();
 
   const x = d3.scaleBand().domain(HOURS).range([margin.left, width - margin.right]).padding(0.2);
   const yBar = d3.scaleLinear().domain([0, 100]).range([height - margin.bottom, margin.top]);
@@ -99,12 +103,6 @@ export function createHoverChart(hoverEl, heatmapEl) {
     .attr("y", (tick) => yBar(tick) + 4)
     .attr("text-anchor", "end")
     .text((tick) => `${tick}%`);
-
-  // Los títulos de cada eje ("Disponibilidad (%)"/"Tiempo (s)") se
-  // dejaron afuera a propósito: la leyenda de arriba ya nombra las dos
-  // series, y los ticks de cada eje ya llevan su unidad ("80%", "40.0s")
-  // — un título de eje en la misma fila que la leyenda se pisaba con
-  // ella (misma altura, mismo lado izquierdo).
 
   // Eje Y derecho (tiempo de respuesta) — su dominio cambia con el
   // filtro activo (ver update()), así que se re-dibuja desde una función.
@@ -173,6 +171,31 @@ export function createHoverChart(hoverEl, heatmapEl) {
 
   let currentRows = [];
   let shownDayKey = null;
+  let pinnedDayKey = null;
+
+  // Resalta (o limpia, si dayKeyToHighlight es null) la fila entera del
+  // mapa principal que corresponde al día fijado. Se vuelve a llamar
+  // desde update() porque heatmapMain.render() reconstruye el <svg> del
+  // mapa en cada render — cualquier clase puesta a mano en una celda
+  // anterior desaparece con ese rebuild.
+  function setPinnedHighlight(dayKeyToHighlight) {
+    heatmapEl.querySelectorAll(".heat-cell--pinned").forEach((cell) => cell.classList.remove("heat-cell--pinned"));
+    if (dayKeyToHighlight == null) return;
+    heatmapEl.querySelectorAll(".heat-cell").forEach((cell) => {
+      const datum = cell.__data__;
+      if (datum && datum.dayKey === dayKeyToHighlight) cell.classList.add("heat-cell--pinned");
+    });
+  }
+
+  function showDay(dayKey) {
+    const dayRows = currentRows.filter((row) => dateKey(row.fecha) === dayKey);
+    if (!dayRows.length) return false;
+    shownDayKey = dayKey;
+    emptyEl.hidden = true;
+    svgNode.hidden = false;
+    renderDay(dayRows);
+    return true;
+  }
 
   function renderDay(dayRows) {
     const sorted = [...dayRows].sort((a, b) => a.hora - b.hora);
@@ -190,6 +213,9 @@ export function createHoverChart(hoverEl, heatmapEl) {
             .attr("y", yBar(0))
             .attr("height", 0)
             .attr("fill", (row) => resolveCellColor(row, reportConfig.availability))
+            .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row, reportConfig.availability)))
+            .on("mousemove", (event) => moveTooltip(tooltipEl, event))
+            .on("mouseleave", () => hideTooltip(tooltipEl))
             .call((enter) =>
               enter
                 .transition()
@@ -221,7 +247,10 @@ export function createHoverChart(hoverEl, heatmapEl) {
             .attr("class", "hover-chart-point")
             .attr("cx", (row) => x(row.hora) + x.bandwidth() / 2)
             .attr("cy", (row) => yLine(Number.isFinite(row.tiempo) ? row.tiempo : 0))
-            .attr("r", 3),
+            .attr("r", 3)
+            .on("mouseenter", (event, row) => showTooltip(tooltipEl, event, hourlyTooltipHtml(row, reportConfig.response)))
+            .on("mousemove", (event) => moveTooltip(tooltipEl, event))
+            .on("mouseleave", () => hideTooltip(tooltipEl)),
         (update) =>
           update.call((update) =>
             update
@@ -236,66 +265,44 @@ export function createHoverChart(hoverEl, heatmapEl) {
     if (sorted[0]) titleEl.textContent = `${sorted[0].dia} ${sorted[0].mes}`;
   }
 
-  function positionNear(rect) {
-    const bounds = hoverEl.getBoundingClientRect();
-    const gap = 12;
-    let left = rect.right + gap;
-    if (left + bounds.width > window.innerWidth) {
-      left = rect.left - bounds.width - gap;
-    }
-    left = Math.max(8, Math.min(left, window.innerWidth - bounds.width - 8));
-
-    let top = rect.top + rect.height / 2 - bounds.height / 2;
-    top = Math.max(8, Math.min(top, window.innerHeight - bounds.height - 8));
-
-    hoverEl.style.left = `${left}px`;
-    hoverEl.style.top = `${top}px`;
-  }
-
   function handleMove(event) {
+    if (pinnedDayKey != null) return;
     const datum = d3.select(event.target).datum();
     if (!datum || datum.dayKey == null) return;
     if (datum.dayKey === shownDayKey) return;
-
-    const dayRows = currentRows.filter((row) => dateKey(row.fecha) === datum.dayKey);
-    if (!dayRows.length) return;
-
-    shownDayKey = datum.dayKey;
-    hoverEl.hidden = false;
-    renderDay(dayRows);
-    positionNear(event.target.getBoundingClientRect());
+    showDay(datum.dayKey);
   }
 
-  function handleLeave() {
-    shownDayKey = null;
-    hoverEl.hidden = true;
+  function handleClick(event) {
+    const datum = d3.select(event.target).datum();
+    if (!datum || datum.dayKey == null) return;
+
+    if (pinnedDayKey === datum.dayKey) {
+      pinnedDayKey = null;
+      setPinnedHighlight(null);
+      return;
+    }
+
+    if (datum.dayKey !== shownDayKey && !showDay(datum.dayKey)) return;
+    pinnedDayKey = datum.dayKey;
+    setPinnedHighlight(pinnedDayKey);
   }
 
-  // "Puente" de hover: mover el mouse desde una celda hacia el tooltip
-  // (para llegar al círculo de umbral) sale de heatmapEl — sin este
-  // chequeo de relatedTarget, ese movimiento dispararía mouseleave y
-  // escondería el tooltip antes de poder tocar el handle. Mismo chequeo
-  // a la inversa en el propio tooltip, para no esconderlo al volver al
-  // mapa.
   heatmapEl.addEventListener("mousemove", handleMove);
-  heatmapEl.addEventListener("mouseleave", (event) => {
-    if (event.relatedTarget && hoverEl.contains(event.relatedTarget)) return;
-    handleLeave();
-  });
-  hoverEl.addEventListener("mouseleave", (event) => {
-    if (event.relatedTarget && heatmapEl.contains(event.relatedTarget)) return;
-    handleLeave();
-  });
+  heatmapEl.addEventListener("click", handleClick);
 
   function update(rows) {
     currentRows = rows;
     yLine = d3.scaleLinear().domain(computeResponseDomain(rows)).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
-    if (!hoverEl.hidden) {
-      shownDayKey = null;
-      hoverEl.hidden = true;
-    }
+
+    pinnedDayKey = null;
+    shownDayKey = null;
+    setPinnedHighlight(null);
+    titleEl.textContent = "";
+    emptyEl.hidden = false;
+    svgNode.hidden = true;
   }
 
   return { update };
