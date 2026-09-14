@@ -6,7 +6,6 @@ import { state, getFilteredRows, defaultMonthRange } from "./state.js";
 import { reportConfig, average, SPECIAL_STATES } from "./colorScales.js";
 import * as heatmapMain from "./heatmapMain.js";
 import { createHoverChart } from "./heatmapHoverChart.js";
-import * as eventsPanel from "./events.js";
 
 ensurePageStyle(new URL("./style.css", import.meta.url).href);
 
@@ -92,15 +91,7 @@ const TEMPLATE = `
         <div data-ref="hoverPeriodChart" class="hover-chart"></div>
       </div>
 
-      <section class="records-panel">
-        <div class="section-heading compact">
-          <div>
-            <p>Eventos</p>
-            <h2>Bloques marcados</h2>
-          </div>
-        </div>
-        <div data-ref="eventsList" class="events-list"></div>
-      </section>
+      <div data-ref="hoverAllDaysChart" class="hover-chart hover-chart-wide"></div>
     </section>
   </section>
 `;
@@ -127,6 +118,7 @@ export function mount(container) {
     hoverEl: els.hoverChart,
     weekEl: els.hoverWeekChart,
     periodEl: els.hoverPeriodChart,
+    allDaysEl: els.hoverAllDaysChart,
     heatmapEl: els.heatmap,
     tooltipEl,
   });
@@ -197,8 +189,6 @@ export function mount(container) {
 
     heatmapMain.render(rows, { heatmapEl: els.heatmap, state });
     hoverChart.update(rows, getFilteredRows(false));
-
-    eventsPanel.render(rows, els.eventsList);
   }
 
   container.querySelectorAll("[data-report]").forEach((button) => {

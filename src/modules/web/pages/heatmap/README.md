@@ -1,7 +1,7 @@
 # Disponibilidad y tiempo de respuesta (heatmap)
 
 Heatmap hora × día de disponibilidad y tiempo de respuesta de un objetivo,
-con detalle horario del día seleccionado y panel de bloques marcados.
+con detalle horario del día seleccionado.
 
 ## Fuente de datos
 
@@ -62,10 +62,10 @@ suelta el filtro y vuelve a mostrar todas las celdas.
 
 ## Gráfico de hover con pin
 
-Debajo del mapa principal, en una grilla de 3 columnas, hay 3 gráficos
-combinados (barras de disponibilidad + línea de tiempo de respuesta),
-todos derivados de la misma celda (día + hora) que estés hover-eando o
-hayas fijado:
+Debajo del mapa principal hay 4 gráficos combinados (barras de
+disponibilidad + línea de tiempo de respuesta), todos derivados de la
+misma celda (día + hora) que estés hover-eando o hayas fijado — los
+primeros 3 en una grilla de 3 columnas, el cuarto a todo el ancho debajo:
 
 - **El día**: las 24 horas del día bajo el mouse.
 - **La semana**: la misma hora en cada uno de los 7 días de esa semana
@@ -73,24 +73,33 @@ hayas fijado:
   objetivo, sin aplicar el filtro de Período (para mostrar siempre la
   semana completa aunque el filtro elegido la corte). Días sin datos
   quedan como un espacio punteado.
-- **El período**: la misma hora en todas las ocurrencias de ese mismo
-  día de semana **dentro del filtro de Período activo** (ej. si estás
-  mirando un sábado, todos los sábados que el Período actual incluya) —
-  a diferencia del panel de semana, este sí respeta el Período.
+- **El período (mismo día de semana)**: la misma hora en todas las
+  ocurrencias de ese mismo día de semana **dentro del filtro de Período
+  activo** (ej. si estás mirando un sábado, todos los sábados que el
+  Período actual incluya).
+- **Todos los días del período** (panel ancho, debajo de los otros 3):
+  la misma hora en **cualquier** día dentro del Período activo, sin
+  filtrar por día de semana — ej. si el Período es agosto completo,
+  muestra los 31 días a esa hora. `heatmapPeriodPanel.js` y
+  `heatmapAllDaysPanel.js` comparten toda la lógica de dibujo en
+  `heatmapDayListPanel.js`; solo difieren en qué filas eligen y el
+  título.
 
-Mover el mouse por una fila del mapa actualiza los 3 en vivo, con
-transición animada. Moverse a otra hora de la MISMA fila no cambia el
-gráfico del día (ya muestra las 24 horas) pero sí actualiza los de
-semana y período, porque esos dependen de la hora puntual.
+Mover el mouse por una fila del mapa actualiza los 4 en vivo, con
+transición animada (excepto el de "todos los días", que reconstruye su
+`<svg>` en cada hover al igual que el de período, porque su cantidad de
+columnas varía). Moverse a otra hora de la MISMA fila no cambia el
+gráfico del día (ya muestra las 24 horas) pero sí actualiza los demás,
+porque dependen de la hora puntual.
 
-Clickear una celda **fija** los 3 gráficos en esa combinación día+hora:
+Clickear una celda **fija** los 4 gráficos en esa combinación día+hora:
 dejan de reaccionar al hover, y esa fila queda resaltada en el mapa.
 Clickear la misma celda de nuevo lo suelta (vuelve al modo hover-en-vivo).
 Clickear otra celda distinta re-fija a la nueva.
 
 El valor exacto de cada barra o punto se consigue pasando el mouse sobre
 ella — funciona tanto en modo vivo como fijado. Las celdas del mapa
-principal no tienen tooltip de texto propio (vive en estos 3 gráficos).
+principal no tienen tooltip de texto propio (vive en estos 4 gráficos).
 
 Sobre las barras de disponibilidad del gráfico del día hay un círculo
 arrastrable (mismo mecanismo que el de la leyenda del mapa principal)
@@ -99,14 +108,14 @@ dónde llega" cada hora contra un umbral elegido. Arranca en 95% y vuelve
 a ese valor si cambiás Objetivo o Período (eso también suelta el pin).
 
 El selector "Informe: Disponibilidad / Respuesta" solo cambia cómo se
-colorean las celdas del mapa principal — los 3 gráficos siempre muestran
+colorean las celdas del mapa principal — los 4 gráficos siempre muestran
 ambas métricas juntas, sin importar la pestaña activa.
 
 ### Mediana y promedio de tiempo de respuesta
 
-Los 3 gráficos muestran también dos líneas horizontales de referencia para
+Los 4 gráficos muestran también dos líneas horizontales de referencia para
 el tiempo de respuesta: **mediana** (guiones) y **promedio** (punteada),
 con su valor en la leyenda de cada gráfico. Se calculan una sola vez sobre
 **todas** las filas del objetivo dentro del Período activo (no por
-día/semana/subset local) — por eso el mismo valor aparece igual en los 3
+día/semana/subset local) — por eso el mismo valor aparece igual en los 4
 paneles, y solo cambia si cambiás Objetivo o Período. Ver `median`/`average` en `colorScales.js` y `heatmapRefLines.js`.

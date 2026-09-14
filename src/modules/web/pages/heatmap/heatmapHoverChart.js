@@ -4,6 +4,7 @@ import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/toolti
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { createWeekPanel } from "./heatmapWeekPanel.js";
 import { createPeriodPanel } from "./heatmapPeriodPanel.js";
+import { createAllDaysPanel } from "./heatmapAllDaysPanel.js";
 import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -31,7 +32,7 @@ function barValue(row) {
 }
 
 export function createHoverChart(options) {
-  const { hoverEl, weekEl, periodEl, heatmapEl, tooltipEl } = options;
+  const { hoverEl, weekEl, periodEl, allDaysEl, heatmapEl, tooltipEl } = options;
   const margin = { top: 44, right: 56, bottom: 34, left: 40 };
   const width = 680;
   const height = 320;
@@ -177,6 +178,7 @@ export function createHoverChart(options) {
 
   const weekPanel = createWeekPanel(weekEl, tooltipEl);
   const periodPanel = createPeriodPanel(periodEl, tooltipEl);
+  const allDaysPanel = createAllDaysPanel(allDaysEl, tooltipEl);
 
   let currentRows = [];
   let allObjectiveRows = [];
@@ -296,6 +298,7 @@ export function createHoverChart(options) {
   function refreshSubPanels(dayKey, hour) {
     weekPanel.show(allObjectiveRows, dayKey, hour, responseStats);
     periodPanel.show(currentRows, dayKey, hour, responseStats);
+    allDaysPanel.show(currentRows, dayKey, hour, responseStats);
   }
 
   function handleMove(event) {
@@ -355,6 +358,7 @@ export function createHoverChart(options) {
 
     weekPanel.reset();
     periodPanel.reset();
+    allDaysPanel.reset();
   }
 
   return { update };
