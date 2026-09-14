@@ -8,6 +8,7 @@ globalThis.d3 = require("../vendor/d3.min.js");
 const {
   specialStateFor,
   average,
+  median,
   formatValue,
   compactCellLabel,
   cellLabelFor,
@@ -38,6 +39,18 @@ test("average ignora valores no finitos", () => {
 
 test("average devuelve null si no hay valores finitos", () => {
   assert.equal(average([NaN, null]), null);
+});
+
+test("median ignora valores no finitos y devuelve el valor central", () => {
+  assert.equal(median([10, NaN, 20, 30, null]), 20);
+});
+
+test("median promedia los dos valores centrales en listas pares", () => {
+  assert.equal(median([10, 20, 30, 40]), 25);
+});
+
+test("median devuelve null si no hay valores finitos", () => {
+  assert.equal(median([NaN, null]), null);
 });
 
 test("formatValue formatea con unidad y decimales", () => {

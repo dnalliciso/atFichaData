@@ -131,7 +131,7 @@ export function render(rows, options) {
   // cruza más de un mes).
   const monthGroups = d3.groups(dateEntries, (entry) => `${entry.date.getFullYear()}-${entry.date.getMonth()}`);
   const monthBarX = 6;
-  const monthBarWidth = 14;
+  const monthBarWidth = 22;
   svg
     .append("g")
     .selectAll("g")

@@ -2,6 +2,7 @@ import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.j
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey } from "../../../../core/excel.js";
+import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
 
 // Letra de día de semana a partir de Date#getDay() (0=domingo…6=sábado) —
 // se deriva de la fecha, no de una columna del Excel.
@@ -86,6 +87,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .attr("x", margin.left + 154)
     .attr("y", 19)
     .text("Tiempo de respuesta");
+  const refLegendTexts = appendResponseRefLegend(legend, margin.left + 290);
 
   svg
     .append("g")
@@ -130,8 +132,9 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .x((cell) => x(cell.label) + x.bandwidth() / 2)
     .y((cell) => yLine(cell.row.tiempo));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
+  const refLineEls = appendResponseRefLines(svg, margin, width);
 
-  function show(allRows, dayKey, hour) {
+  function show(allRows, dayKey, hour, stats) {
     if (dayKey == null || hour == null) return;
 
     const [year, month, day] = dayKey.split("-").map(Number);
@@ -150,6 +153,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     const max = values.length ? Math.max(...values) : 0;
     yLine = d3.scaleLinear().domain([0, max > 0 ? max * 1.1 : 1]).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
+    updateResponseRefLines(refLineEls, yLine, stats, refLegendTexts);
 
     barsG
       .selectAll("rect")

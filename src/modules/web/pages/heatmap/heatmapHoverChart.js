@@ -1,9 +1,10 @@
-import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor, average, median } from "./colorScales.js";
 import { dateKey } from "../../../../core/excel.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { createWeekPanel } from "./heatmapWeekPanel.js";
 import { createPeriodPanel } from "./heatmapPeriodPanel.js";
+import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const DEFAULT_THRESHOLD = 95;
@@ -82,6 +83,7 @@ export function createHoverChart(options) {
     .attr("x", margin.left + 154)
     .attr("y", 19)
     .text("Tiempo de respuesta");
+  const refLegendTexts = appendResponseRefLegend(legend, margin.left + 290);
 
   // Eje X (horas) — fijo, una sola vez.
   svg
@@ -130,6 +132,7 @@ export function createHoverChart(options) {
     .x((row) => x(row.hora) + x.bandwidth() / 2)
     .y((row) => yLine(Number.isFinite(row.tiempo) ? row.tiempo : 0));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
+  const refLineEls = appendResponseRefLines(svg, margin, width);
 
   // Umbral arrastrable — mismo patrón que renderGradientLegend en
   // shared/legend.js, reusando sus clases .legend-handle-* de
@@ -177,6 +180,11 @@ export function createHoverChart(options) {
 
   let currentRows = [];
   let allObjectiveRows = [];
+  // Mediana/promedio del tiempo de respuesta sobre TODAS las filas del
+  // Período activo — se recalcula solo en update() (cambio de Objetivo o
+  // Período), no por día/hora, y se pasa igual a los 3 paneles (ver
+  // heatmapRefLines.js).
+  let responseStats = { median: null, average: null };
   let shownDayKey = null;
   let shownHour = null;
   let pinnedDayKey = null;
@@ -286,8 +294,8 @@ export function createHoverChart(options) {
   }
 
   function refreshSubPanels(dayKey, hour) {
-    weekPanel.show(allObjectiveRows, dayKey, hour);
-    periodPanel.show(currentRows, dayKey, hour);
+    weekPanel.show(allObjectiveRows, dayKey, hour, responseStats);
+    periodPanel.show(currentRows, dayKey, hour, responseStats);
   }
 
   function handleMove(event) {
@@ -331,6 +339,10 @@ export function createHoverChart(options) {
     yLine = d3.scaleLinear().domain(computeResponseDomain(rows)).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
+
+    const tiempoValues = rows.map((row) => row.tiempo);
+    responseStats = { median: median(tiempoValues), average: average(tiempoValues) };
+    updateResponseRefLines(refLineEls, yLine, responseStats, refLegendTexts);
 
     pinnedDayKey = null;
     pinnedHour = null;

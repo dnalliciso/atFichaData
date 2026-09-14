@@ -48,6 +48,11 @@ export function average(values) {
   return clean.length ? d3.mean(clean) : null;
 }
 
+export function median(values) {
+  const clean = values.filter(Number.isFinite);
+  return clean.length ? d3.median(clean) : null;
+}
+
 export function compactCellLabel(value, config) {
   if (!Number.isFinite(value)) return "";
   if (config.unit === "%") return value.toFixed(value < 99 ? 1 : 0);

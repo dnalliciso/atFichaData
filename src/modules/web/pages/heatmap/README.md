@@ -81,3 +81,12 @@ a ese valor si cambiás Objetivo o Período (eso también suelta el pin).
 El selector "Informe: Disponibilidad / Respuesta" solo cambia cómo se
 colorean las celdas del mapa principal — los 3 gráficos siempre muestran
 ambas métricas juntas, sin importar la pestaña activa.
+
+### Mediana y promedio de tiempo de respuesta
+
+Los 3 gráficos muestran también dos líneas horizontales de referencia para
+el tiempo de respuesta: **mediana** (guiones) y **promedio** (punteada),
+con su valor en la leyenda de cada gráfico. Se calculan una sola vez sobre
+**todas** las filas del objetivo dentro del Período activo (no por
+día/semana/subset local) — por eso el mismo valor aparece igual en los 3
+paneles, y solo cambia si cambiás Objetivo o Período. Ver `median`/`average` en `colorScales.js` y `heatmapRefLines.js`.

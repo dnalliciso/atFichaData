@@ -2,6 +2,7 @@ import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.j
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey, shortDateLabel } from "../../../../core/excel.js";
+import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
 
 // Nombre de día de semana a partir de Date#getDay() (0=domingo…6=sábado)
 // — se deriva de la fecha, no de una columna del Excel.
@@ -31,7 +32,7 @@ export function createPeriodPanel(containerEl, tooltipEl) {
   // semana haya en el Período — se reconstruye el <svg> completo en cada
   // show(), igual criterio que ya usaba heatmapPeriodWeekday.js hace 2
   // rondas.
-  function show(periodRows, dayKey, hour) {
+  function show(periodRows, dayKey, hour, stats) {
     if (dayKey == null || hour == null) return;
 
     const [year, month, day] = dayKey.split("-").map(Number);
@@ -97,6 +98,7 @@ export function createPeriodPanel(containerEl, tooltipEl) {
       .attr("x", margin.left + 154)
       .attr("y", 19)
       .text("Tiempo de respuesta");
+    const refLegendTexts = appendResponseRefLegend(legend, margin.left + 290);
 
     svg
       .append("g")
@@ -166,6 +168,9 @@ export function createPeriodPanel(containerEl, tooltipEl) {
       .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row, reportConfig.response)))
       .on("mousemove", (event) => moveTooltip(tooltipEl, event))
       .on("mouseleave", () => hideTooltip(tooltipEl));
+
+    const refLineEls = appendResponseRefLines(svg, margin, width);
+    updateResponseRefLines(refLineEls, yLine, stats, refLegendTexts);
   }
 
   function reset() {

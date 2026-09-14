@@ -72,3 +72,30 @@ sale de un ejemplo de la galería y qué es lógica propia de este proyecto:
 Si en el futuro se agrega otro tipo de gráfico, sumarlo a esta tabla con
 el mismo criterio: URL exacta del ejemplo de la galería (si existe uno) y
 qué se le agregó de propio.
+
+## Convenciones y gotchas de JS/DOM
+
+Lecciones de bugs reales ya encontrados en este proyecto, para no repetirlos
+y para saber por dónde empezar si un síntoma parecido vuelve a aparecer.
+
+- **Nunca usar `elemento.hidden = true/false` sobre un `<svg>` (ni sobre
+  cualquier elemento no-HTML).** La propiedad IDL `.hidden` está garantizada
+  solo en `HTMLElement`; en motores donde `SVGElement` no la implementa
+  igual, la asignación se convierte en una propiedad JS inerte que no toca
+  el atributo `hidden` real del DOM — el elemento queda oculto (o visible)
+  para siempre, sin ningún error en consola, aunque el resto del código
+  (joins de D3, `textContent`, transiciones) siga corriendo perfecto. Por
+  eso un bug así no se puede reproducir en Chromium/Playwright (que sí
+  soporta `.hidden` en SVG) pero sí aparece en el navegador real de un
+  usuario. Usar siempre `elemento.toggleAttribute("hidden", true/false)`
+  (o `setAttribute`/`removeAttribute`) en vez de la propiedad `.hidden`
+  cuando el elemento puede ser un `<svg>` o cualquier nodo no-HTML. Ver el
+  fix en `heatmapHoverChart.js`/`heatmapWeekPanel.js` (mostrar/ocultar el
+  gráfico de día y de semana del heatmap).
+- **La regla nativa `[hidden] { display: none }` del navegador se puede
+  perder contra una regla propia de igual o mayor especificidad** (ej.
+  `.empty-state { display: grid }` en `base.css`, o `.hover-chart svg {
+  display: block }`) si esa regla se carga después. El `hidden` HTML/DOM
+  queda puesto correctamente pero el elemento sigue viéndose. Fix: agregar
+  una regla más específica con el atributo, ej. `.empty-state[hidden] {
+  display: none }`, en vez de depender de la regla nativa sola.
