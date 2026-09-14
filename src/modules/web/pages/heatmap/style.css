@@ -48,6 +48,14 @@
   stroke-width: 2px;
 }
 
+/* Fila fijada (click en una celda) — mismo trazo que el hover, pero
+   puesto a mano vía clase (ver heatmapHoverChart.js) en vez de
+   depender de que el mouse siga encima. */
+.heat-cell--pinned {
+  stroke: var(--navy);
+  stroke-width: 2px;
+}
+
 .cell-label {
   fill: rgba(18, 22, 43, 0.8);
   font-size: 10px;
@@ -109,35 +117,41 @@
   color: var(--navy);
 }
 
+.heatmap-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.heatmap-row > * {
+  /* Mismo motivo que ya documenté en .detail-grid > * (ronda anterior,
+     ya borrada junto con esa sección): sin esto, el item de grid que
+     envuelve el SVG ancho del mapa (~720px+) no se encoge por debajo de
+     ese ancho intrínseco — el propio .chart-wrap ya maneja el overflow
+     con scroll horizontal, pero necesita que el grid le permita
+     encogerse primero. */
+  min-width: 0;
+}
+
 @media (max-width: 980px) {
   .summary-strip,
-  .workspace {
+  .workspace,
+  .heatmap-row {
     grid-template-columns: 1fr;
   }
 }
 
-/* Tooltip de hover del mapa principal: gráfico combinado (barra +
-   línea), grande — deliberadamente NO reusa .tooltip (esa es global,
-   compartida por src/shared/tooltip.js y otras páginas para tooltips de
-   texto chicos; reusarla acá arrastraría su max-width:260px o, peor,
-   un cambio futuro a .tooltip rompería este componente sin que se note
-   en el código de acá). */
+/* Gráfico combinado (barra + línea) al hover sobre el mapa — columna
+   fija del layout (ver .heatmap-row), ya no un tooltip flotante. El
+   <svg width:100%> de adentro escala solo con el ancho que le da el
+   grid, sin necesitar un ancho propio fijo acá. */
 .hover-chart {
-  position: fixed;
-  z-index: 20;
-  /* min() en vez de un ancho fijo: la misma clase de bug de overflow que
-     ya corregimos dos veces esta sesión en otras páginas, acá evitada
-     desde el CSS en vez de parcheada después. Necesita el `width` además
-     del `max-width`: un position:fixed sin ancho propio se calcula por
-     shrink-to-fit, y el <svg width:100%> de adentro no tiene de qué
-     "100%" partir en ese cálculo — sin esto, el tooltip renderizaba a
-     ~326px en vez de los 680px del viewBox del gráfico. */
-  width: 680px;
-  max-width: min(680px, calc(100vw - 32px));
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(11, 22, 54, 0.22);
+  box-shadow: var(--shadow);
   padding: var(--space-3);
 }
 
@@ -170,4 +184,15 @@
 
 .hover-chart-point {
   fill: var(--accent-fill);
+}
+
+.hover-chart-bars rect,
+.hover-chart-points circle {
+  cursor: default;
+}
+
+.hover-chart-bars rect:hover,
+.hover-chart-points circle:hover {
+  stroke: var(--navy);
+  stroke-width: 1.5px;
 }
