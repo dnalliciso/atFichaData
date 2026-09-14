@@ -42,10 +42,10 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
 
 ## Gráfico de hover con pin
 
-A la derecha del mapa principal hay 3 gráficos combinados apilados
-(barras de disponibilidad + línea de tiempo de respuesta), todos
-derivados de la misma celda (día + hora) que estés hover-eando o hayas
-fijado:
+Debajo del mapa principal, en una grilla de 3 columnas, hay 3 gráficos
+combinados (barras de disponibilidad + línea de tiempo de respuesta),
+todos derivados de la misma celda (día + hora) que estés hover-eando o
+hayas fijado:
 
 - **El día**: las 24 horas del día bajo el mouse.
 - **La semana**: la misma hora en cada uno de los 7 días de esa semana
