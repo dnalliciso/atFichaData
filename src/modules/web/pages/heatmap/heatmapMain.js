@@ -10,8 +10,6 @@ import {
   buildEmpiricalGradient,
 } from "./colorScales.js";
 import { renderGradientLegend } from "../../../../shared/legend.js";
-import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
-import { hourlyTooltipHtml } from "./tooltipContent.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const MIN_RESERVED_DAYS = 31;
@@ -53,7 +51,7 @@ function aggregateHourlyByDay(rows) {
 }
 
 export function render(rows, options) {
-  const { heatmapEl, tooltipEl, state } = options;
+  const { heatmapEl, state } = options;
   const config = reportConfig[state.report];
   const data = aggregateHourlyByDay(rows);
 
@@ -179,10 +177,7 @@ export function render(rows, options) {
     .attr("width", x.bandwidth())
     .attr("height", y.bandwidth())
     .attr("rx", 4)
-    .attr("fill", (d) => resolveCellColor(d, config))
-    .on("mouseenter", (event, d) => showTooltip(tooltipEl, event, hourlyTooltipHtml(d, config)))
-    .on("mousemove", (event) => moveTooltip(tooltipEl, event))
-    .on("mouseleave", () => hideTooltip(tooltipEl));
+    .attr("fill", (d) => resolveCellColor(d, config));
 
   cells
     .append("text")
