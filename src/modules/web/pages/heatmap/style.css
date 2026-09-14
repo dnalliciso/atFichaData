@@ -56,6 +56,16 @@
   stroke-width: 2px;
 }
 
+/* Día sin datos en el panel de semana — placeholder punteado, sin la
+   clase .heat-cell (para no heredar su cursor ni su hover con stroke
+   navy, que no aplican a una celda sin datos). */
+.heat-cell--empty {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1px;
+  stroke-dasharray: 4 3;
+}
+
 .cell-label {
   fill: rgba(18, 22, 43, 0.8);
   font-size: 10px;
@@ -131,6 +141,12 @@
      ese ancho intrínseco — el propio .chart-wrap ya maneja el overflow
      con scroll horizontal, pero necesita que el grid le permita
      encogerse primero. */
+  min-width: 0;
+}
+
+.hover-chart-stack {
+  display: grid;
+  gap: var(--space-4);
   min-width: 0;
 }
 
