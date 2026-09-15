@@ -24,9 +24,16 @@ export function appendResponseRefLines(svg, margin, width) {
 // tick, o entre sí cuando ambas caían cerca) — se actualiza en el texto de
 // la leyenda (`legendTexts`, de appendResponseRefLegend), que tiene
 // posición fija y no depende de dónde caiga el valor en la escala.
-export function updateResponseRefLines(elements, yLine, stats, legendTexts) {
+//
+// `extent` es opcional: solo lo necesitan los paneles de ancho variable
+// (heatmapDayListPanel.js), donde el <svg> se reusa entre shows() pero su
+// ancho cambia según cuántas celdas haya — sin esto, la línea se quedaría
+// con el x2 del primer render para siempre. Los paneles de ancho fijo
+// (día/semana) no lo pasan y la línea simplemente no se reposiciona.
+export function updateResponseRefLines(elements, yLine, stats, legendTexts, extent) {
   const set = (kind, value, baseLabel) => {
     const { line } = elements[kind];
+    if (extent) line.attr("x1", extent.x1).attr("x2", extent.x2);
     const visible = Number.isFinite(value);
     line.style("display", visible ? null : "none");
     if (visible) {

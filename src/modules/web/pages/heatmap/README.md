@@ -94,12 +94,16 @@ primeros 3 en una grilla de 3 columnas, el cuarto a todo el ancho debajo:
   `heatmapDayListPanel.js`; solo difieren en qué filas eligen y el
   título.
 
-Mover el mouse por una fila del mapa actualiza los 4 en vivo, con
-transición animada (excepto el de "todos los días", que reconstruye su
-`<svg>` en cada hover al igual que el de período, porque su cantidad de
-columnas varía). Moverse a otra hora de la MISMA fila no cambia el
-gráfico del día (ya muestra las 24 horas) pero sí actualiza los demás,
-porque dependen de la hora puntual.
+Mover el mouse por una fila del mapa actualiza los 4 en vivo, con la
+misma transición animada en los cuatro. El `<svg>` de "período" y "todos
+los días" se arma una sola vez (igual que semana) y se reusa entre
+hovers con `.join()` — su eje X sí se recalcula en cada uno (cambia el
+ancho y, en "período", el conjunto de fechas al cambiar de día de
+semana), pero cuando el conjunto de fechas no cambia (ej. te movés de
+hora en hora dentro de la misma fila) las barras existentes animan su
+alto en vez de reconstruirse. Moverse a otra hora de la MISMA fila no
+cambia el gráfico del día (ya muestra las 24 horas) pero sí actualiza
+los demás, porque dependen de la hora puntual.
 
 Clickear una celda **fija** los 4 gráficos en esa combinación día+hora:
 dejan de reaccionar al hover, y esa fila queda resaltada en el mapa.
