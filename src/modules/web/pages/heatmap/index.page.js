@@ -45,6 +45,14 @@ const TEMPLATE = `
         </div>
       </div>
 
+      <div class="control-group" data-ref="responseViewGroup" hidden>
+        <span class="control-label">Vista de Respuesta</span>
+        <div class="segmented" role="tablist" aria-label="Vista de respuesta">
+          <button class="segment active" data-response-view="value" type="button">Tiempo de respuesta</button>
+          <button class="segment" data-response-view="gradient" type="button">Gradiente de cambio</button>
+        </div>
+      </div>
+
       <label class="control-group">
         <span class="control-label">Objetivo</span>
         <select data-ref="objectiveSelect"></select>
@@ -175,6 +183,10 @@ export function mount(container) {
     container.querySelectorAll("[data-report]").forEach((button) => {
       button.classList.toggle("active", button.dataset.report === state.report);
     });
+    els.responseViewGroup.hidden = state.report !== "response";
+    container.querySelectorAll("[data-response-view]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.responseView === state.responseView);
+    });
 
     const config = reportConfig[state.report];
 
@@ -188,12 +200,20 @@ export function mount(container) {
     renderCategoryLegend(els.legend, Object.values(SPECIAL_STATES));
 
     heatmapMain.render(rows, { heatmapEl: els.heatmap, state });
-    hoverChart.update(rows, getFilteredRows(false), state.report);
+    hoverChart.update(rows, getFilteredRows(false), state.report, state.responseView);
   }
 
   container.querySelectorAll("[data-report]").forEach((button) => {
     button.addEventListener("click", () => {
       state.report = button.dataset.report;
+      state.responseView = "value";
+      render();
+    });
+  });
+
+  container.querySelectorAll("[data-response-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.responseView = button.dataset.responseView;
       render();
     });
   });

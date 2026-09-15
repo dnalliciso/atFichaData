@@ -162,3 +162,32 @@ es independiente por gráfico — apagar "Promedio" en el panel del día no
 lo apaga en el de la semana — y se mantiene al pasar el mouse a otra
 celda (`createResponseRefLines` en `heatmapRefLines.js` guarda el estado
 de encendido/apagado y lo vuelve a aplicar en cada `update()`).
+
+### Gradiente de cambio
+
+En la pestaña Respuesta hay un segundo selector, "Vista de Respuesta":
+**Tiempo de respuesta** (lo de arriba) o **Gradiente de cambio**. Esta
+segunda vista reemplaza la línea de tiempo de respuesta de los 4
+gráficos por una línea de **cambio punto a punto contra el dato
+INMEDIATAMENTE anterior** en ese mismo eje (no contra la mediana/general
+del período) — ej. en el gráfico del día, cada hora contra la hora
+anterior; en el de la semana, cada día contra el día anterior (lunes vs.
+martes, etc.); en período/todos-los-días, cada ocurrencia contra la
+anterior en el tiempo.
+
+`gradientPercent = (actual / anterior) × 100` — de 10s a 12s el
+gradiente es 120%; de 12s a 9s es 75%. Cada punto se marca con un
+triángulo: **▲ rojo** si el tiempo subió (más lento) o **▼ verde** si
+bajó (más rápido), con una línea punteada de referencia en 100% ("sin
+cambio"). El primer punto de la serie, o cualquier punto sin un anterior
+válido (estado especial, hueco, o anterior = 0), no tiene gradiente y
+queda fuera de la línea. El tooltip de cada punto muestra el tiempo de
+respuesta, si subió o bajó, la diferencia en segundos y el gradiente en
+%. Ver `heatmapGradient.js` (`computeGradientSeries`,
+`computeGradientDomain`, `createGradientChart`) y
+`gradientTooltipHtml` en `tooltipContent.js`.
+
+Cambiar entre "Tiempo de respuesta" y "Gradiente de cambio" no
+reconstruye nada — ambas vistas quedan siempre armadas en el DOM de los
+4 gráficos (igual que Disponibilidad/Respuesta), solo se alterna cuál
+está visible.

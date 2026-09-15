@@ -5,6 +5,10 @@ export const MONTH_ORDER = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ag
 export const state = {
   rows: [],
   report: "availability",
+  // Solo aplica cuando report==="response": "value" (línea de tiempo de
+  // respuesta, como siempre) o "gradient" (línea del cambio punto a
+  // punto respecto al anterior, ver heatmapGradient.js).
+  responseView: "value",
   objective: "",
   dateFrom: "",
   dateTo: "",

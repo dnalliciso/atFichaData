@@ -7,6 +7,7 @@ import { createPeriodPanel } from "./heatmapPeriodPanel.js";
 import { createAllDaysPanel } from "./heatmapAllDaysPanel.js";
 import { createResponseRefLines } from "./heatmapRefLines.js";
 import { renderLineBridges } from "./heatmapLineBridge.js";
+import { createGradientChart } from "./heatmapGradient.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const DEFAULT_THRESHOLD = 95;
@@ -142,6 +143,7 @@ export function createHoverChart(options) {
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
   const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
   const refLines = createResponseRefLines(svg, legendResponse, margin, width, margin.left, 34);
+  const gradientChart = createGradientChart(svg, legend, margin, width, height, margin.left, tooltipEl);
 
   // Umbral arrastrable — mismo patrón que renderGradientLegend en
   // shared/legend.js, reusando sus clases .legend-handle-* de
@@ -195,6 +197,10 @@ export function createHoverChart(options) {
   // que el mapa principal: barras de disponibilidad en una, línea+puntos
   // de tiempo de respuesta en la otra, nunca combinadas.
   let currentReport = "availability";
+  // "value" (línea de tiempo de respuesta, como siempre) o "gradient"
+  // (línea del % de cambio punto a punto) — solo aplica con
+  // currentReport==="response".
+  let currentResponseView = "value";
   // Mediana/promedio del tiempo de respuesta sobre TODAS las filas del
   // Período activo — se recalcula solo en update() (cambio de Objetivo o
   // Período), no por día/hora, y se pasa igual a los 3 paneles (ver
@@ -248,6 +254,7 @@ export function createHoverChart(options) {
     const localValues = sorted.map(responseValueOf);
     const localStats = { median: median(localValues), average: average(localValues) };
     refLines.update(yLine, { general: responseStats, local: localStats });
+    gradientChart.update(sorted, responseValueOf, (row) => x(row.hora) + x.bandwidth() / 2);
 
     barsG
       .selectAll("rect")
@@ -359,29 +366,34 @@ export function createHoverChart(options) {
   heatmapEl.addEventListener("mousemove", handleMove);
   heatmapEl.addEventListener("click", handleClick);
 
-  // Muestra/oculta cada mitad del gráfico según la pestaña activa — se
-  // llama en cada update() (cambio de Objetivo/Período/pestaña). Ambas
-  // mitades quedan siempre construidas en el DOM, solo se alterna cuál
-  // se ve, para no tener que reconstruir ejes/leyenda al cambiar de
-  // pestaña.
+  // Muestra/oculta cada mitad del gráfico según la pestaña activa y, en
+  // Respuesta, según la vista elegida (valor o gradiente) — se llama en
+  // cada update() (cambio de Objetivo/Período/pestaña/vista). Las tres
+  // quedan siempre construidas en el DOM, solo se alterna cuál se ve.
   function applyReportVisibility() {
     const showAvailability = currentReport === "availability";
+    const showGradient = currentReport === "response" && currentResponseView === "gradient";
+    const showValue = currentReport === "response" && !showGradient;
     legendAvailability.style("display", showAvailability ? null : "none");
-    legendResponse.style("display", showAvailability ? "none" : null);
+    legendResponse.style("display", showValue ? null : "none");
+    gradientChart.legendGroup.style("display", showGradient ? null : "none");
     yBarAxisG.style("display", showAvailability ? null : "none");
-    yLineAxisG.style("display", showAvailability ? "none" : null);
+    yLineAxisG.style("display", showValue ? null : "none");
+    gradientChart.axisGroup.style("display", showGradient ? null : "none");
     barsG.style("display", showAvailability ? null : "none");
-    pointsG.style("display", showAvailability ? "none" : null);
-    linePath.style("display", showAvailability ? "none" : null);
-    bridgeG.style("display", showAvailability ? "none" : null);
-    refLines.group.style("display", showAvailability ? "none" : null);
+    pointsG.style("display", showValue ? null : "none");
+    linePath.style("display", showValue ? null : "none");
+    bridgeG.style("display", showValue ? null : "none");
+    refLines.group.style("display", showValue ? null : "none");
+    gradientChart.chartGroup.style("display", showGradient ? null : "none");
     thresholdGroup.style("display", showAvailability ? null : "none");
   }
 
-  function update(rows, allRows, report) {
+  function update(rows, allRows, report, responseView) {
     currentRows = rows;
     allObjectiveRows = allRows;
     currentReport = report;
+    currentResponseView = responseView;
     yLine = d3.scaleLinear().domain(computeResponseDomain(rows)).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
@@ -404,9 +416,9 @@ export function createHoverChart(options) {
     emptyEl.hidden = false;
     svgNode.toggleAttribute("hidden", true);
 
-    weekPanel.reset(currentReport);
-    periodPanel.reset(currentReport);
-    allDaysPanel.reset(currentReport);
+    weekPanel.reset(currentReport, currentResponseView);
+    periodPanel.reset(currentReport, currentResponseView);
+    allDaysPanel.reset(currentReport, currentResponseView);
   }
 
   return { update };

@@ -4,6 +4,7 @@ import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey } from "../../../../core/excel.js";
 import { createResponseRefLines } from "./heatmapRefLines.js";
 import { renderLineBridges } from "./heatmapLineBridge.js";
+import { createGradientChart } from "./heatmapGradient.js";
 
 // Letra de día de semana a partir de Date#getDay() (0=domingo…6=sábado) —
 // se deriva de la fecha, no de una columna del Excel.
@@ -146,19 +147,26 @@ export function createWeekPanel(containerEl, tooltipEl) {
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
   const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
   const refLines = createResponseRefLines(svg, legendResponse, margin, width, margin.left, 34);
+  const gradientChart = createGradientChart(svg, legend, margin, width, height, margin.left, tooltipEl);
 
   let currentReport = "availability";
+  let currentResponseView = "value";
   function applyReportVisibility() {
     const showAvailability = currentReport === "availability";
+    const showGradient = currentReport === "response" && currentResponseView === "gradient";
+    const showValue = currentReport === "response" && !showGradient;
     legendAvailability.style("display", showAvailability ? null : "none");
-    legendResponse.style("display", showAvailability ? "none" : null);
+    legendResponse.style("display", showValue ? null : "none");
+    gradientChart.legendGroup.style("display", showGradient ? null : "none");
     yBarAxisG.style("display", showAvailability ? null : "none");
-    yLineAxisG.style("display", showAvailability ? "none" : null);
+    yLineAxisG.style("display", showValue ? null : "none");
+    gradientChart.axisGroup.style("display", showGradient ? null : "none");
     barsG.style("display", showAvailability ? null : "none");
-    pointsG.style("display", showAvailability ? "none" : null);
-    linePath.style("display", showAvailability ? "none" : null);
-    bridgeG.style("display", showAvailability ? "none" : null);
-    refLines.group.style("display", showAvailability ? "none" : null);
+    pointsG.style("display", showValue ? null : "none");
+    linePath.style("display", showValue ? null : "none");
+    bridgeG.style("display", showValue ? null : "none");
+    refLines.group.style("display", showValue ? null : "none");
+    gradientChart.chartGroup.style("display", showGradient ? null : "none");
   }
 
   function show(allRows, dayKey, hour, stats) {
@@ -185,6 +193,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     // completo, pasado desde heatmapHoverChart.js).
     const localStats = { median: median(values), average: average(values) };
     refLines.update(yLine, { general: stats, local: localStats });
+    gradientChart.update(cells, cellResponseValue, (cell) => x(cell.label) + x.bandwidth() / 2, { getRow: (cell) => cell.row });
 
     barsG
       .selectAll("rect")
@@ -264,8 +273,9 @@ export function createWeekPanel(containerEl, tooltipEl) {
     svgNode.toggleAttribute("hidden", false);
   }
 
-  function reset(report) {
+  function reset(report, responseView) {
     currentReport = report;
+    currentResponseView = responseView;
     applyReportVisibility();
     titleEl.textContent = "";
     emptyEl.hidden = false;

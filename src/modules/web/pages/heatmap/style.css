@@ -284,6 +284,40 @@
   opacity: 0.55;
 }
 
+/* Gráfico de "Gradiente de cambio" — ver heatmapGradient.js. La línea es
+   neutra (navy); el color real de la comparación vive en los triángulos:
+   rojo hacia arriba (el tiempo subió, más lento) o verde hacia abajo (el
+   tiempo bajó, más rápido) — mismo criterio "verde=bueno, rojo=malo" que
+   el resto del dashboard. */
+.hover-chart-gradient-line {
+  stroke: var(--navy);
+  stroke-width: 2px;
+}
+
+.hover-chart-gradient-refline {
+  stroke: var(--muted);
+  stroke-width: 1.5px;
+  stroke-dasharray: 4 3;
+}
+
+.hover-chart-gradient-point {
+  cursor: default;
+  stroke: var(--panel);
+  stroke-width: 1px;
+}
+
+.hover-chart-gradient-point--up {
+  fill: #c2272d;
+}
+
+.hover-chart-gradient-point--down {
+  fill: #65b636;
+}
+
+.hover-chart-gradient-point--same {
+  fill: var(--muted);
+}
+
 .hover-chart-bars rect,
 .hover-chart-points circle {
   cursor: default;
