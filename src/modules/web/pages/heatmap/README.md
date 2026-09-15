@@ -37,6 +37,15 @@ otro `.xlsx` sin tocar el archivo de ejemplo.
   `marcado_atentus` → gris "Datos no válidos") se determinan por
   `estado_bloque`, no por `color_disp`/`color_tiempo` — esas columnas no
   distinguen negro de gris en la muestra actual.
+- La columna `tiempo` de un bloque en estado especial suele venir en `0`
+  en el Excel (un placeholder, no una medición real) — `responseValueOf()`
+  en `colorScales.js` lo trata como `NaN` en vez de tomarlo literal, así
+  la línea de tiempo de respuesta de los 4 gráficos de hover no se va en
+  picada a 0 en esos bloques. En su lugar, el tramo se corta y se dibuja
+  un segmento **punteado** que une el último valor válido antes del
+  bloque con el primero después (`heatmapLineBridge.js`) — si el bloque
+  especial está al principio o al final de la serie (sin un valor de un
+  lado), no hay nada que puentear y el tramo simplemente no se dibuja.
 - La leyenda de degradado usa los colores reales del Excel como paradas
   (no recalcula ninguna escala propia).
 - Las celdas del mapa de Disponibilidad muestran el **downtime en

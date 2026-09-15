@@ -350,7 +350,7 @@ export function createHoverChart(options) {
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
 
-    const tiempoValues = rows.map((row) => row.tiempo);
+    const tiempoValues = rows.map(responseValueOf);
     responseStats = { median: median(tiempoValues), average: average(tiempoValues) };
     updateResponseRefLines(refLineEls, yLine, responseStats, refLegendTexts);
 

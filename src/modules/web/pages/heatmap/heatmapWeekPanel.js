@@ -1,4 +1,4 @@
-import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor, responseValueOf } from "./colorScales.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey } from "../../../../core/excel.js";
@@ -38,6 +38,12 @@ export function weekDatesOf(date) {
 function barValue(row) {
   if (specialStateFor(row.estado_bloque)) return 100;
   return Number.isFinite(row.disponibilidad) ? row.disponibilidad : 0;
+}
+
+// Tiempo de respuesta de una celda de semana: NaN si el día no tiene fila
+// (hueco real) o si la fila es un estado especial (ver responseValueOf).
+function cellResponseValue(cell) {
+  return cell.row ? responseValueOf(cell.row) : NaN;
 }
 
 export function createWeekPanel(containerEl, tooltipEl) {
@@ -129,9 +135,9 @@ export function createWeekPanel(containerEl, tooltipEl) {
   const pointsG = svg.append("g").attr("class", "hover-chart-points");
   const lineGenerator = d3
     .line()
-    .defined((cell) => cell.row && Number.isFinite(cell.row.tiempo))
+    .defined((cell) => Number.isFinite(cellResponseValue(cell)))
     .x((cell) => x(cell.label) + x.bandwidth() / 2)
-    .y((cell) => yLine(cell.row.tiempo));
+    .y((cell) => yLine(cellResponseValue(cell)));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
   const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
   const refLineEls = appendResponseRefLines(svg, margin, width);
@@ -151,7 +157,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
       row: rowByDateKey.get(dateKey(date)) || null,
     }));
 
-    const values = cells.map((cell) => cell.row?.tiempo).filter(Number.isFinite);
+    const values = cells.map(cellResponseValue).filter(Number.isFinite);
     const max = values.length ? Math.max(...values) : 0;
     yLine = d3.scaleLinear().domain([0, max > 0 ? max * 1.1 : 1]).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
@@ -200,12 +206,12 @@ export function createWeekPanel(containerEl, tooltipEl) {
       );
 
     linePath.datum(cells).transition().duration(TRANSITION_MS).attr("d", lineGenerator);
-    renderLineBridges(bridgeG, "hover-chart-line-bridge", cells, (cell) => cell.row?.tiempo, (cell) => x(cell.label) + x.bandwidth() / 2, (value) => yLine(value));
+    renderLineBridges(bridgeG, "hover-chart-line-bridge", cells, cellResponseValue, (cell) => x(cell.label) + x.bandwidth() / 2, (value) => yLine(value));
 
     pointsG
       .selectAll("circle")
       .data(
-        cells.filter((cell) => cell.row && Number.isFinite(cell.row.tiempo)),
+        cells.filter((cell) => Number.isFinite(cellResponseValue(cell))),
         (cell) => cell.label,
       )
       .join(
@@ -215,7 +221,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
             .attr("class", "hover-chart-point")
             .attr("r", 3)
             .attr("cx", (cell) => x(cell.label) + x.bandwidth() / 2)
-            .attr("cy", (cell) => yLine(cell.row.tiempo))
+            .attr("cy", (cell) => yLine(cellResponseValue(cell)))
             .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row)))
             .on("mousemove", (event) => moveTooltip(tooltipEl, event))
             .on("mouseleave", () => hideTooltip(tooltipEl)),
@@ -225,7 +231,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
               .transition()
               .duration(TRANSITION_MS)
               .attr("cx", (cell) => x(cell.label) + x.bandwidth() / 2)
-              .attr("cy", (cell) => yLine(cell.row.tiempo)),
+              .attr("cy", (cell) => yLine(cellResponseValue(cell))),
           ),
         (exit) => exit.remove(),
       );

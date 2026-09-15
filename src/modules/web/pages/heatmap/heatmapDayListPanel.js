@@ -1,4 +1,4 @@
-import { reportConfig, resolveCellColor, specialStateFor } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor, responseValueOf } from "./colorScales.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { shortDateLabel } from "../../../../core/excel.js";
@@ -56,7 +56,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
 
     const x = d3.scaleBand().domain(cells.map((cell) => cell.dateKeyValue)).range([margin.left, width - margin.right]).padding(0.2);
     const yBar = d3.scaleLinear().domain([0, 100]).range([height - margin.bottom, margin.top]);
-    const values = cells.map((cell) => cell.row.tiempo).filter(Number.isFinite);
+    const values = cells.map((cell) => responseValueOf(cell.row)).filter(Number.isFinite);
     const max = values.length ? Math.max(...values) : 0;
     const yLine = d3.scaleLinear().domain([0, max > 0 ? max * 1.1 : 1]).range([height - margin.bottom, margin.top]);
 
@@ -141,16 +141,16 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
 
     const lineGenerator = d3
       .line()
-      .defined((cell) => Number.isFinite(cell.row.tiempo))
+      .defined((cell) => Number.isFinite(responseValueOf(cell.row)))
       .x((cell) => x(cell.dateKeyValue) + x.bandwidth() / 2)
-      .y((cell) => yLine(cell.row.tiempo));
+      .y((cell) => yLine(responseValueOf(cell.row)));
 
     svg.append("path").attr("class", "hover-chart-line").attr("fill", "none").datum(cells).attr("d", lineGenerator);
     renderLineBridges(
       svg.append("g").attr("class", "hover-chart-line-bridges"),
       "hover-chart-line-bridge",
       cells,
-      (cell) => cell.row.tiempo,
+      (cell) => responseValueOf(cell.row),
       (cell) => x(cell.dateKeyValue) + x.bandwidth() / 2,
       (value) => yLine(value),
     );
@@ -158,11 +158,11 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     svg
       .append("g")
       .selectAll("circle")
-      .data(cells.filter((cell) => Number.isFinite(cell.row.tiempo)))
+      .data(cells.filter((cell) => Number.isFinite(responseValueOf(cell.row))))
       .join("circle")
       .attr("class", "hover-chart-point")
       .attr("cx", (cell) => x(cell.dateKeyValue) + x.bandwidth() / 2)
-      .attr("cy", (cell) => yLine(cell.row.tiempo))
+      .attr("cy", (cell) => yLine(responseValueOf(cell.row)))
       .attr("r", 3)
       .on("mouseenter", (event, cell) => showTooltip(tooltipEl, event, hourlyTooltipHtml(cell.row)))
       .on("mousemove", (event) => moveTooltip(tooltipEl, event))
