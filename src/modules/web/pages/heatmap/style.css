@@ -198,13 +198,17 @@
   fill: #65b636;
 }
 
+/* Naranja propio de la serie de tiempo de respuesta (línea, puntos,
+   puente y su muestra de leyenda) — deliberadamente distinto de
+   --warn (usado por la línea de referencia "Mediana" más abajo) para
+   que ambos no se confundan al ser del mismo color. */
 .hover-chart-legend-line {
-  stroke: var(--accent-fill);
-  fill: var(--accent-fill);
+  stroke: #ea580c;
+  fill: #ea580c;
 }
 
 .hover-chart-line {
-  stroke: var(--accent-fill);
+  stroke: #ea580c;
   stroke-width: 2px;
 }
 
@@ -214,20 +218,21 @@
    un bloque sin dato real" de la línea continua normal. Ver
    heatmapLineBridge.js. */
 .hover-chart-line-bridge {
-  stroke: var(--accent-fill);
+  stroke: #ea580c;
   stroke-width: 2px;
   stroke-dasharray: 4 3;
   pointer-events: none;
 }
 
 .hover-chart-point {
-  fill: var(--accent-fill);
+  fill: #ea580c;
 }
 
 /* Líneas de referencia (mediana/promedio del tiempo de respuesta) — ver
    heatmapRefLines.js. Colores/patrones de guiones distintos entre sí y
-   contra el umbral arrastrable (navy) y la serie de tiempo (accent-fill),
-   para que las tres líneas del mismo gráfico se puedan distinguir. */
+   contra el umbral arrastrable (navy) y la serie de tiempo (naranja de
+   arriba), para que las tres líneas del mismo gráfico se puedan
+   distinguir. */
 .hover-chart-refline--median {
   stroke: var(--warn);
   stroke-width: 1.5px;
