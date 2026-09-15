@@ -284,38 +284,38 @@
   opacity: 0.55;
 }
 
-/* Gráfico de "Gradiente de cambio" — ver heatmapGradient.js. La línea es
-   neutra (navy); el color real de la comparación vive en los triángulos:
-   rojo hacia arriba (el tiempo subió, más lento) o verde hacia abajo (el
-   tiempo bajó, más rápido) — mismo criterio "verde=bueno, rojo=malo" que
-   el resto del dashboard. */
-.hover-chart-gradient-line {
-  stroke: var(--navy);
-  stroke-width: 2px;
-}
-
+/* Gráfico de "Gradiente de cambio" — ver heatmapGradient.js. Cada barra
+   compara un punto contra SU propio anterior (no una tendencia continua),
+   por eso son barras independientes que suben/bajan desde una línea de
+   referencia en 0 (sin cambio), no una línea que las conecta. Rojo hacia
+   arriba (el tiempo subió, más lento) o verde hacia abajo (bajó, más
+   rápido) — mismo criterio "verde=bueno, rojo=malo" que el resto del
+   dashboard. */
 .hover-chart-gradient-refline {
   stroke: var(--muted);
   stroke-width: 1.5px;
   stroke-dasharray: 4 3;
 }
 
-.hover-chart-gradient-point {
+.hover-chart-gradient-bar {
   cursor: default;
-  stroke: var(--panel);
-  stroke-width: 1px;
 }
 
-.hover-chart-gradient-point--up {
+.hover-chart-gradient-bar--up {
   fill: #c2272d;
 }
 
-.hover-chart-gradient-point--down {
+.hover-chart-gradient-bar--down {
   fill: #65b636;
 }
 
-.hover-chart-gradient-point--same {
+.hover-chart-gradient-bar--same {
   fill: var(--muted);
+}
+
+.hover-chart-gradient-bar:hover {
+  stroke: var(--navy);
+  stroke-width: 1.5px;
 }
 
 .hover-chart-bars rect,

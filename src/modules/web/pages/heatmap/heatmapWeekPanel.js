@@ -193,7 +193,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     // completo, pasado desde heatmapHoverChart.js).
     const localStats = { median: median(values), average: average(values) };
     refLines.update(yLine, { general: stats, local: localStats });
-    gradientChart.update(cells, cellResponseValue, (cell) => x(cell.label) + x.bandwidth() / 2, { getRow: (cell) => cell.row });
+    gradientChart.update(cells, cellResponseValue, (cell) => x(cell.label) + x.bandwidth() / 2, x.bandwidth(), { getRow: (cell) => cell.row });
 
     barsG
       .selectAll("rect")

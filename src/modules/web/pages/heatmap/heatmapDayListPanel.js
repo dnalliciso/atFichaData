@@ -174,7 +174,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     // desde heatmapHoverChart.js).
     const localStats = { median: median(values), average: average(values) };
     refLines.update(yLine, { general: stats, local: localStats }, { x1: margin.left, x2: currentWidth - margin.right });
-    gradientChart.update(cells, (cell) => responseValueOf(cell.row), (cell) => x(cell.dateKeyValue) + x.bandwidth() / 2, {
+    gradientChart.update(cells, (cell) => responseValueOf(cell.row), (cell) => x(cell.dateKeyValue) + x.bandwidth() / 2, x.bandwidth(), {
       getRow: (cell) => cell.row,
       extent: { x1: margin.left, x2: currentWidth - margin.right },
     });

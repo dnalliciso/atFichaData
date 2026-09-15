@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const { computeGradientSeries, computeGradientDomain } = await import(
+const { computeGradientSeries, computeDeltaDomain } = await import(
   "../src/modules/web/pages/heatmap/heatmapGradient.js"
 );
 
@@ -57,18 +57,18 @@ test("computeGradientSeries sin gradiente si el anterior es 0 (ratio indefinido)
   assert.equal(result[1].gradientPercent, null);
 });
 
-test("computeGradientDomain incluye siempre el 100% con margen", () => {
+test("computeDeltaDomain incluye siempre el 0 con margen", () => {
   const series = [
-    { gradientPercent: null },
-    { gradientPercent: 120 },
-    { gradientPercent: 90 },
+    { deltaSeconds: null },
+    { deltaSeconds: 5 },
+    { deltaSeconds: -3 },
   ];
-  const [min, max] = computeGradientDomain(series);
-  assert.ok(min < 90);
-  assert.ok(max > 120);
+  const [min, max] = computeDeltaDomain(series);
+  assert.ok(min < -3);
+  assert.ok(max > 5);
 });
 
-test("computeGradientDomain sin puntos válidos cae a un rango parejo alrededor de 100", () => {
-  const series = [{ gradientPercent: null }];
-  assert.deepEqual(computeGradientDomain(series), [50, 150]);
+test("computeDeltaDomain sin puntos válidos cae a [-1, 1]", () => {
+  const series = [{ deltaSeconds: null }];
+  assert.deepEqual(computeDeltaDomain(series), [-1, 1]);
 });

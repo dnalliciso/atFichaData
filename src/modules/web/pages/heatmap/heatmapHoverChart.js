@@ -254,7 +254,7 @@ export function createHoverChart(options) {
     const localValues = sorted.map(responseValueOf);
     const localStats = { median: median(localValues), average: average(localValues) };
     refLines.update(yLine, { general: responseStats, local: localStats });
-    gradientChart.update(sorted, responseValueOf, (row) => x(row.hora) + x.bandwidth() / 2);
+    gradientChart.update(sorted, responseValueOf, (row) => x(row.hora) + x.bandwidth() / 2, x.bandwidth());
 
     barsG
       .selectAll("rect")

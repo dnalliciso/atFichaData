@@ -168,23 +168,26 @@ de encendido/apagado y lo vuelve a aplicar en cada `update()`).
 En la pestaña Respuesta hay un segundo selector, "Vista de Respuesta":
 **Tiempo de respuesta** (lo de arriba) o **Gradiente de cambio**. Esta
 segunda vista reemplaza la línea de tiempo de respuesta de los 4
-gráficos por una línea de **cambio punto a punto contra el dato
+gráficos por barras de **cambio punto a punto contra el dato
 INMEDIATAMENTE anterior** en ese mismo eje (no contra la mediana/general
 del período) — ej. en el gráfico del día, cada hora contra la hora
 anterior; en el de la semana, cada día contra el día anterior (lunes vs.
 martes, etc.); en período/todos-los-días, cada ocurrencia contra la
 anterior en el tiempo.
 
-`gradientPercent = (actual / anterior) × 100` — de 10s a 12s el
-gradiente es 120%; de 12s a 9s es 75%. Cada punto se marca con un
-triángulo: **▲ rojo** si el tiempo subió (más lento) o **▼ verde** si
-bajó (más rápido), con una línea punteada de referencia en 100% ("sin
-cambio"). El primer punto de la serie, o cualquier punto sin un anterior
-válido (estado especial, hueco, o anterior = 0), no tiene gradiente y
-queda fuera de la línea. El tooltip de cada punto muestra el tiempo de
-respuesta, si subió o bajó, la diferencia en segundos y el gradiente en
-%. Ver `heatmapGradient.js` (`computeGradientSeries`,
-`computeGradientDomain`, `createGradientChart`) y
+Cada barra sube (**rojo**, el tiempo subió/empeoró) o baja (**verde**,
+bajó/mejoró) desde una línea de referencia en 0 ("sin cambio") — son
+barras independientes, no una línea continua, porque cada una compara
+contra SU propio anterior, no es una tendencia real. La magnitud
+graficada es la **diferencia en segundos** (`actual - anterior`), no un
+%: un ratio como 32s→14s da 43.75%, que no transmite la magnitud real
+del cambio ni tiene un "0 = sin cambio" intuitivo — el % se calcula
+igual (`(actual / anterior) × 100`) pero queda solo como dato
+complementario en el tooltip, junto con el tiempo de respuesta y si
+subió o bajó. El primer punto de la serie, o cualquier punto sin un
+anterior válido (estado especial, hueco, o anterior = 0), no tiene
+gradiente y no dibuja barra. Ver `heatmapGradient.js`
+(`computeGradientSeries`, `computeDeltaDomain`, `createGradientChart`) y
 `gradientTooltipHtml` en `tooltipContent.js`.
 
 Cambiar entre "Tiempo de respuesta" y "Gradiente de cambio" no
