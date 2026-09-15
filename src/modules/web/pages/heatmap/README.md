@@ -136,11 +136,22 @@ nueva.
 
 ### Mediana y promedio de tiempo de respuesta
 
-Los 4 gráficos de la pestaña **Respuesta** muestran también dos líneas
-horizontales de referencia: **mediana** (guiones) y **promedio**
-(punteada), con su valor en la leyenda de cada gráfico. Se calculan una
-sola vez sobre **todas** las filas del objetivo dentro del Período activo
-(no por día/semana/subset local) — por eso el mismo valor aparece igual
-en los 4 paneles, y solo cambia si cambiás Objetivo o Período. La
-pestaña Disponibilidad no tiene líneas de referencia propias. Ver
+Los 4 gráficos de la pestaña **Respuesta** muestran 4 líneas horizontales
+de referencia, dos pares distinguibles por color y por patrón de guiones:
+
+- **General** (naranja `--warn` / gris, igual patrón que antes): mediana
+  y promedio sobre **todas** las filas del objetivo dentro del Período
+  activo — se calculan una sola vez en `heatmapHoverChart.js` y son el
+  MISMO valor en los 4 paneles, sin importar qué día/hora estés mirando.
+- **Local** (azul / verde azulado, "Med. local" / "Prom. local" en la
+  leyenda): mediana y promedio de **solo los datos que ese panel en
+  particular muestra** — las 24 horas del día, los 7 días de la semana,
+  las N ocurrencias del mismo día de semana en el período, o todos los
+  días del período a esa hora. Se recalcula en cada `show()` de cada
+  panel, a partir de los mismos valores que ya usa para dibujar sus
+  barras/línea (no una consulta aparte).
+
+El patrón de guiones sigue marcando mediana (6 3) vs. promedio (2 3) en
+ambos pares; el color es lo que distingue general de local. La pestaña
+Disponibilidad no tiene líneas de referencia propias. Ver
 `median`/`average` en `colorScales.js` y `heatmapRefLines.js`.

@@ -1,4 +1,4 @@
-import { reportConfig, resolveCellColor, specialStateFor, responseValueOf } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor, responseValueOf, median, average } from "./colorScales.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { shortDateLabel } from "../../../../core/excel.js";
@@ -29,7 +29,9 @@ function barValue(row) {
 // panel de período), las barras viejas salen y las nuevas entran con
 // transición en vez de un reemplazo instantáneo del <svg>.
 export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataText, selectCells, titleFor }) {
-  const margin = { top: 44, right: 56, bottom: 34, left: 40 };
+  // top más alto que en rondas anteriores: la leyenda ahora tiene 2 filas
+  // (fila 1: identidad de la serie; fila 2: las 4 líneas de referencia).
+  const margin = { top: 60, right: 56, bottom: 34, left: 40 };
   const height = 280;
   const initialWidth = 680;
 
@@ -79,7 +81,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left + 162);
+  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left, 34);
 
   // Eje Y de disponibilidad (%) — dominio fijo [0,100], no depende del
   // ancho, se dibuja una sola vez.
@@ -132,6 +134,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     pointsG.style("display", showAvailability ? "none" : null);
     linePath.style("display", showAvailability ? "none" : null);
     bridgeG.style("display", showAvailability ? "none" : null);
+    refLineEls.group.style("display", showAvailability ? "none" : null);
   }
 
   function show(periodRows, dayKey, hour, stats) {
@@ -158,12 +161,15 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     const max = values.length ? Math.max(...values) : 0;
     yLine = d3.scaleLinear().domain([0, max > 0 ? max * 1.1 : 1]).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
-    if (currentReport === "response") {
-      updateResponseRefLines(refLineEls, yLine, stats, refLegendTexts, { x1: margin.left, x2: currentWidth - margin.right });
-    } else {
-      refLineEls.median.line.style("display", "none");
-      refLineEls.average.line.style("display", "none");
-    }
+    // Local: mediana/promedio de exactamente las celdas que este panel
+    // muestra (`values`, ya calculado arriba para el dominio de yLine) —
+    // a diferencia de `stats` (general, del Período completo, pasado
+    // desde heatmapHoverChart.js).
+    const localStats = { median: median(values), average: average(values) };
+    updateResponseRefLines(refLineEls, yLine, { general: stats, local: localStats }, refLegendTexts, {
+      x1: margin.left,
+      x2: currentWidth - margin.right,
+    });
 
     xAxisG
       .selectAll("text")

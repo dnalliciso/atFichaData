@@ -228,19 +228,31 @@
   fill: #ea580c;
 }
 
-/* Líneas de referencia (mediana/promedio del tiempo de respuesta) — ver
-   heatmapRefLines.js. Colores/patrones de guiones distintos entre sí y
-   contra el umbral arrastrable (navy) y la serie de tiempo (naranja de
-   arriba), para que las tres líneas del mismo gráfico se puedan
-   distinguir. */
-.hover-chart-refline--median {
+/* Líneas de referencia del tiempo de respuesta — ver heatmapRefLines.js.
+   Dos ejes de distinción: el patrón de guiones marca mediana (6 3) vs.
+   promedio (2 3), el color marca general del período (cálido) vs. local
+   de este gráfico (frío) — así las 4 se leen sin confundirse entre sí ni
+   con el umbral arrastrable (navy) o la serie de tiempo (naranja). */
+.hover-chart-refline--median-general {
   stroke: var(--warn);
   stroke-width: 1.5px;
   stroke-dasharray: 6 3;
 }
 
-.hover-chart-refline--average {
+.hover-chart-refline--average-general {
   stroke: var(--muted);
+  stroke-width: 1.5px;
+  stroke-dasharray: 2 3;
+}
+
+.hover-chart-refline--median-local {
+  stroke: #2563eb;
+  stroke-width: 1.5px;
+  stroke-dasharray: 6 3;
+}
+
+.hover-chart-refline--average-local {
+  stroke: #0d9488;
   stroke-width: 1.5px;
   stroke-dasharray: 2 3;
 }

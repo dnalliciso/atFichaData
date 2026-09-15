@@ -34,7 +34,9 @@ function barValue(row) {
 
 export function createHoverChart(options) {
   const { hoverEl, weekEl, periodEl, allDaysEl, heatmapEl, tooltipEl } = options;
-  const margin = { top: 44, right: 56, bottom: 34, left: 40 };
+  // top más alto que en rondas anteriores: la leyenda ahora tiene 2 filas
+  // (fila 1: identidad de la serie; fila 2: las 4 líneas de referencia).
+  const margin = { top: 60, right: 56, bottom: 34, left: 40 };
   const width = 680;
   const height = 320;
 
@@ -87,7 +89,7 @@ export function createHoverChart(options) {
     .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left + 162);
+  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left, 34);
 
   // Eje X (horas) — fijo, una sola vez.
   svg
@@ -242,6 +244,12 @@ export function createHoverChart(options) {
   function renderDay(dayRows) {
     const sorted = [...dayRows].sort((a, b) => a.hora - b.hora);
 
+    // Local: mediana/promedio de las 24 horas de ESTE día en particular
+    // (a diferencia de responseStats, que es del Período completo).
+    const localValues = sorted.map(responseValueOf);
+    const localStats = { median: median(localValues), average: average(localValues) };
+    updateResponseRefLines(refLineEls, yLine, { general: responseStats, local: localStats }, refLegendTexts);
+
     barsG
       .selectAll("rect")
       .data(sorted, (row) => row.hora)
@@ -367,6 +375,7 @@ export function createHoverChart(options) {
     pointsG.style("display", showAvailability ? "none" : null);
     linePath.style("display", showAvailability ? "none" : null);
     bridgeG.style("display", showAvailability ? "none" : null);
+    refLineEls.group.style("display", showAvailability ? "none" : null);
     thresholdGroup.style("display", showAvailability ? null : "none");
   }
 
@@ -378,14 +387,13 @@ export function createHoverChart(options) {
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
 
+    // General: sobre TODAS las filas del Período activo, se recalcula acá
+    // (una vez por cambio de Objetivo/Período) y es igual en los 4
+    // paneles. Local (por día mostrado) todavía no se conoce — queda en
+    // null hasta que renderDay() la calcule al mostrar un día.
     const tiempoValues = rows.map(responseValueOf);
     responseStats = { median: median(tiempoValues), average: average(tiempoValues) };
-    if (currentReport === "response") {
-      updateResponseRefLines(refLineEls, yLine, responseStats, refLegendTexts);
-    } else {
-      refLineEls.median.line.style("display", "none");
-      refLineEls.average.line.style("display", "none");
-    }
+    updateResponseRefLines(refLineEls, yLine, { general: responseStats, local: { median: null, average: null } }, refLegendTexts);
     applyReportVisibility();
 
     pinnedDayKey = null;

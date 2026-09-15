@@ -1,4 +1,4 @@
-import { reportConfig, resolveCellColor, specialStateFor, responseValueOf } from "./colorScales.js";
+import { reportConfig, resolveCellColor, specialStateFor, responseValueOf, median, average } from "./colorScales.js";
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey } from "../../../../core/excel.js";
@@ -47,7 +47,9 @@ function cellResponseValue(cell) {
 }
 
 export function createWeekPanel(containerEl, tooltipEl) {
-  const margin = { top: 44, right: 56, bottom: 34, left: 40 };
+  // top más alto que en rondas anteriores: la leyenda ahora tiene 2 filas
+  // (fila 1: identidad de la serie; fila 2: las 4 líneas de referencia).
+  const margin = { top: 60, right: 56, bottom: 34, left: 40 };
   const width = 680;
   const height = 280;
 
@@ -96,7 +98,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left + 162);
+  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left, 34);
 
   svg
     .append("g")
@@ -157,6 +159,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     pointsG.style("display", showAvailability ? "none" : null);
     linePath.style("display", showAvailability ? "none" : null);
     bridgeG.style("display", showAvailability ? "none" : null);
+    refLineEls.group.style("display", showAvailability ? "none" : null);
   }
 
   function show(allRows, dayKey, hour, stats) {
@@ -178,12 +181,11 @@ export function createWeekPanel(containerEl, tooltipEl) {
     const max = values.length ? Math.max(...values) : 0;
     yLine = d3.scaleLinear().domain([0, max > 0 ? max * 1.1 : 1]).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
-    if (currentReport === "response") {
-      updateResponseRefLines(refLineEls, yLine, stats, refLegendTexts);
-    } else {
-      refLineEls.median.line.style("display", "none");
-      refLineEls.average.line.style("display", "none");
-    }
+    // Local: mediana/promedio de esta semana en particular (los 7 días
+    // que se muestran), a diferencia de `stats` (general, del Período
+    // completo, pasado desde heatmapHoverChart.js).
+    const localStats = { median: median(values), average: average(values) };
+    updateResponseRefLines(refLineEls, yLine, { general: stats, local: localStats }, refLegendTexts);
 
     barsG
       .selectAll("rect")
