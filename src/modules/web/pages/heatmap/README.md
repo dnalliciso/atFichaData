@@ -71,10 +71,17 @@ suelta el filtro y vuelve a mostrar todas las celdas.
 
 ## Gráfico de hover con pin
 
-Debajo del mapa principal hay 4 gráficos combinados (barras de
-disponibilidad + línea de tiempo de respuesta), todos derivados de la
-misma celda (día + hora) que estés hover-eando o hayas fijado — los
-primeros 3 en una grilla de 3 columnas, el cuarto a todo el ancho debajo:
+Debajo del mapa principal hay 4 gráficos, todos derivados de la misma
+celda (día + hora) que estés hover-eando o hayas fijado — los primeros 3
+en una grilla de 3 columnas, el cuarto a todo el ancho debajo. Cada uno
+muestra **una sola métrica a la vez**, la misma que la pestaña activa del
+Informe: barras de disponibilidad en la pestaña Disponibilidad, línea +
+puntos de tiempo de respuesta en la pestaña Respuesta — nunca las dos
+juntas. Las series/ejes/leyenda de la métrica que no corresponde quedan
+construidos en el DOM pero ocultos (`applyReportVisibility()` en cada
+archivo), así cambiar de pestaña no requiere reconstruir nada, solo
+alternar qué se ve. El eje de valores de la métrica activa siempre va del
+lado izquierdo.
 
 - **El día**: las 24 horas del día bajo el mouse.
 - **La semana**: la misma hora en cada uno de los 7 días de esa semana
@@ -119,16 +126,21 @@ arrastrable (mismo mecanismo que el de la leyenda del mapa principal)
 que traza una línea de referencia horizontal, para comparar a ojo "hasta
 dónde llega" cada hora contra un umbral elegido. Arranca en 95% y vuelve
 a ese valor si cambiás Objetivo o Período (eso también suelta el pin).
+Solo aparece en la pestaña Disponibilidad (no tiene sentido sobre
+segundos).
 
-El selector "Informe: Disponibilidad / Respuesta" solo cambia cómo se
-colorean las celdas del mapa principal — los 4 gráficos siempre muestran
-ambas métricas juntas, sin importar la pestaña activa.
+Cambiar de pestaña (Informe: Disponibilidad / Respuesta) resetea los 4
+gráficos al estado "pasá el mouse..." igual que cambiar de Objetivo o
+Período — hay que volver a pasar el mouse para verlos con la métrica
+nueva.
 
 ### Mediana y promedio de tiempo de respuesta
 
-Los 4 gráficos muestran también dos líneas horizontales de referencia para
-el tiempo de respuesta: **mediana** (guiones) y **promedio** (punteada),
-con su valor en la leyenda de cada gráfico. Se calculan una sola vez sobre
-**todas** las filas del objetivo dentro del Período activo (no por
-día/semana/subset local) — por eso el mismo valor aparece igual en los 4
-paneles, y solo cambia si cambiás Objetivo o Período. Ver `median`/`average` en `colorScales.js` y `heatmapRefLines.js`.
+Los 4 gráficos de la pestaña **Respuesta** muestran también dos líneas
+horizontales de referencia: **mediana** (guiones) y **promedio**
+(punteada), con su valor en la leyenda de cada gráfico. Se calculan una
+sola vez sobre **todas** las filas del objetivo dentro del Período activo
+(no por día/semana/subset local) — por eso el mismo valor aparece igual
+en los 4 paneles, y solo cambia si cambiás Objetivo o Período. La
+pestaña Disponibilidad no tiene líneas de referencia propias. Ver
+`median`/`average` en `colorScales.js` y `heatmapRefLines.js`.

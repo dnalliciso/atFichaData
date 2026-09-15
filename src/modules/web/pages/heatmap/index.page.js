@@ -188,7 +188,7 @@ export function mount(container) {
     renderCategoryLegend(els.legend, Object.values(SPECIAL_STATES));
 
     heatmapMain.render(rows, { heatmapEl: els.heatmap, state });
-    hoverChart.update(rows, getFilteredRows(false));
+    hoverChart.update(rows, getFilteredRows(false), state.report);
   }
 
   container.querySelectorAll("[data-report]").forEach((button) => {

@@ -66,7 +66,8 @@ export function createWeekPanel(containerEl, tooltipEl) {
   let yLine = d3.scaleLinear().domain([0, 1]).range([height - margin.bottom, margin.top]);
 
   const legend = svg.append("g").attr("class", "hover-chart-legend");
-  legend
+  const legendAvailability = legend.append("g");
+  legendAvailability
     .append("rect")
     .attr("class", "hover-chart-legend-swatch")
     .attr("x", margin.left)
@@ -74,27 +75,28 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .attr("width", 10)
     .attr("height", 10)
     .attr("rx", 2);
-  legend.append("text").attr("class", "axis-label").attr("x", margin.left + 16).attr("y", 19).text("Disponibilidad");
-  legend
+  legendAvailability.append("text").attr("class", "axis-label").attr("x", margin.left + 16).attr("y", 19).text("Disponibilidad");
+  const legendResponse = legend.append("g");
+  legendResponse
     .append("line")
     .attr("class", "hover-chart-legend-line")
-    .attr("x1", margin.left + 128)
-    .attr("x2", margin.left + 148)
+    .attr("x1", margin.left)
+    .attr("x2", margin.left + 20)
     .attr("y1", 15)
     .attr("y2", 15);
-  legend
+  legendResponse
     .append("circle")
     .attr("class", "hover-chart-legend-line")
-    .attr("cx", margin.left + 138)
+    .attr("cx", margin.left + 10)
     .attr("cy", 15)
     .attr("r", 3);
-  legend
+  legendResponse
     .append("text")
     .attr("class", "axis-label")
-    .attr("x", margin.left + 154)
+    .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legend, margin.left + 290);
+  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left + 162);
 
   svg
     .append("g")
@@ -107,8 +109,8 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .attr("text-anchor", "middle")
     .text((letter) => letter);
 
-  svg
-    .append("g")
+  const yBarAxisG = svg.append("g");
+  yBarAxisG
     .selectAll("text")
     .data(yBar.ticks(5))
     .join("text")
@@ -118,6 +120,8 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .attr("text-anchor", "end")
     .text((tick) => `${tick}%`);
 
+  // Mismo lado izquierdo que el de disponibilidad — nunca se muestran
+  // los dos juntos (ver applyReportVisibility).
   const yLineAxisG = svg.append("g").attr("class", "hover-chart-yline-axis");
   function drawYLineAxis() {
     yLineAxisG
@@ -125,9 +129,9 @@ export function createWeekPanel(containerEl, tooltipEl) {
       .data(yLine.ticks(5))
       .join("text")
       .attr("class", "legend-axis")
-      .attr("x", width - margin.right + 8)
+      .attr("x", margin.left - 8)
       .attr("y", (tick) => yLine(tick) + 4)
-      .attr("text-anchor", "start")
+      .attr("text-anchor", "end")
       .text((tick) => `${tick.toFixed(1)}s`);
   }
 
@@ -141,6 +145,19 @@ export function createWeekPanel(containerEl, tooltipEl) {
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
   const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
   const refLineEls = appendResponseRefLines(svg, margin, width);
+
+  let currentReport = "availability";
+  function applyReportVisibility() {
+    const showAvailability = currentReport === "availability";
+    legendAvailability.style("display", showAvailability ? null : "none");
+    legendResponse.style("display", showAvailability ? "none" : null);
+    yBarAxisG.style("display", showAvailability ? null : "none");
+    yLineAxisG.style("display", showAvailability ? "none" : null);
+    barsG.style("display", showAvailability ? null : "none");
+    pointsG.style("display", showAvailability ? "none" : null);
+    linePath.style("display", showAvailability ? "none" : null);
+    bridgeG.style("display", showAvailability ? "none" : null);
+  }
 
   function show(allRows, dayKey, hour, stats) {
     if (dayKey == null || hour == null) return;
@@ -161,7 +178,12 @@ export function createWeekPanel(containerEl, tooltipEl) {
     const max = values.length ? Math.max(...values) : 0;
     yLine = d3.scaleLinear().domain([0, max > 0 ? max * 1.1 : 1]).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
-    updateResponseRefLines(refLineEls, yLine, stats, refLegendTexts);
+    if (currentReport === "response") {
+      updateResponseRefLines(refLineEls, yLine, stats, refLegendTexts);
+    } else {
+      refLineEls.median.line.style("display", "none");
+      refLineEls.average.line.style("display", "none");
+    }
 
     barsG
       .selectAll("rect")
@@ -241,7 +263,9 @@ export function createWeekPanel(containerEl, tooltipEl) {
     svgNode.toggleAttribute("hidden", false);
   }
 
-  function reset() {
+  function reset(report) {
+    currentReport = report;
+    applyReportVisibility();
     titleEl.textContent = "";
     emptyEl.hidden = false;
     svgNode.toggleAttribute("hidden", true);

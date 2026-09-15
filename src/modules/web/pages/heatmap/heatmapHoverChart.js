@@ -53,11 +53,12 @@ export function createHoverChart(options) {
   let yLine = d3.scaleLinear().domain([0, 1]).range([height - margin.bottom, margin.top]);
 
   // Leyenda (una sola vez): cuadrado = disponibilidad (barras), línea +
-  // punto = tiempo de respuesta. Hace falta porque el color de las
-  // barras varía por celda (verde/ámbar/rojo) — no alcanza para
-  // distinguir la serie con solo mirar el color.
+  // punto = tiempo de respuesta. Cada mitad vive en su propio grupo para
+  // poder mostrar solo la que corresponde a la pestaña activa (ver
+  // applyReportVisibility) — los gráficos ya no combinan ambas métricas.
   const legend = svg.append("g").attr("class", "hover-chart-legend");
-  legend
+  const legendAvailability = legend.append("g");
+  legendAvailability
     .append("rect")
     .attr("class", "hover-chart-legend-swatch")
     .attr("x", margin.left)
@@ -65,27 +66,28 @@ export function createHoverChart(options) {
     .attr("width", 10)
     .attr("height", 10)
     .attr("rx", 2);
-  legend.append("text").attr("class", "axis-label").attr("x", margin.left + 16).attr("y", 19).text("Disponibilidad");
-  legend
+  legendAvailability.append("text").attr("class", "axis-label").attr("x", margin.left + 16).attr("y", 19).text("Disponibilidad");
+  const legendResponse = legend.append("g");
+  legendResponse
     .append("line")
     .attr("class", "hover-chart-legend-line")
-    .attr("x1", margin.left + 128)
-    .attr("x2", margin.left + 148)
+    .attr("x1", margin.left)
+    .attr("x2", margin.left + 20)
     .attr("y1", 15)
     .attr("y2", 15);
-  legend
+  legendResponse
     .append("circle")
     .attr("class", "hover-chart-legend-line")
-    .attr("cx", margin.left + 138)
+    .attr("cx", margin.left + 10)
     .attr("cy", 15)
     .attr("r", 3);
-  legend
+  legendResponse
     .append("text")
     .attr("class", "axis-label")
-    .attr("x", margin.left + 154)
+    .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legend, margin.left + 290);
+  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left + 162);
 
   // Eje X (horas) — fijo, una sola vez.
   svg
@@ -99,9 +101,9 @@ export function createHoverChart(options) {
     .attr("text-anchor", "middle")
     .text((hour) => String(hour).padStart(2, "0"));
 
-  // Eje Y izquierdo (disponibilidad %) — dominio fijo [0,100], una sola vez.
-  svg
-    .append("g")
+  // Eje Y de disponibilidad (%) — dominio fijo [0,100], una sola vez.
+  const yBarAxisG = svg.append("g");
+  yBarAxisG
     .selectAll("text")
     .data(yBar.ticks(5))
     .join("text")
@@ -111,8 +113,10 @@ export function createHoverChart(options) {
     .attr("text-anchor", "end")
     .text((tick) => `${tick}%`);
 
-  // Eje Y derecho (tiempo de respuesta) — su dominio cambia con el
-  // filtro activo (ver update()), así que se re-dibuja desde una función.
+  // Eje Y de tiempo de respuesta — su dominio cambia con el filtro activo
+  // (ver update()), así que se re-dibuja desde una función. Va del mismo
+  // lado izquierdo que el de disponibilidad (nunca se muestran los dos
+  // juntos, cada pestaña muestra el suyo solo — ver applyReportVisibility).
   const yLineAxisG = svg.append("g").attr("class", "hover-chart-yline-axis");
   function drawYLineAxis() {
     yLineAxisG
@@ -120,9 +124,9 @@ export function createHoverChart(options) {
       .data(yLine.ticks(5))
       .join("text")
       .attr("class", "legend-axis")
-      .attr("x", width - margin.right + 8)
+      .attr("x", margin.left - 8)
       .attr("y", (tick) => yLine(tick) + 4)
-      .attr("text-anchor", "start")
+      .attr("text-anchor", "end")
       .text((tick) => `${tick.toFixed(1)}s`);
   }
   drawYLineAxis();
@@ -185,6 +189,11 @@ export function createHoverChart(options) {
 
   let currentRows = [];
   let allObjectiveRows = [];
+  // "availability" o "response" — qué pestaña del Informe está activa.
+  // Los 4 gráficos de hover muestran una sola métrica a la vez, la misma
+  // que el mapa principal: barras de disponibilidad en una, línea+puntos
+  // de tiempo de respuesta en la otra, nunca combinadas.
+  let currentReport = "availability";
   // Mediana/promedio del tiempo de respuesta sobre TODAS las filas del
   // Período activo — se recalcula solo en update() (cambio de Objetivo o
   // Período), no por día/hora, y se pasa igual a los 3 paneles (ver
@@ -343,16 +352,41 @@ export function createHoverChart(options) {
   heatmapEl.addEventListener("mousemove", handleMove);
   heatmapEl.addEventListener("click", handleClick);
 
-  function update(rows, allRows) {
+  // Muestra/oculta cada mitad del gráfico según la pestaña activa — se
+  // llama en cada update() (cambio de Objetivo/Período/pestaña). Ambas
+  // mitades quedan siempre construidas en el DOM, solo se alterna cuál
+  // se ve, para no tener que reconstruir ejes/leyenda al cambiar de
+  // pestaña.
+  function applyReportVisibility() {
+    const showAvailability = currentReport === "availability";
+    legendAvailability.style("display", showAvailability ? null : "none");
+    legendResponse.style("display", showAvailability ? "none" : null);
+    yBarAxisG.style("display", showAvailability ? null : "none");
+    yLineAxisG.style("display", showAvailability ? "none" : null);
+    barsG.style("display", showAvailability ? null : "none");
+    pointsG.style("display", showAvailability ? "none" : null);
+    linePath.style("display", showAvailability ? "none" : null);
+    bridgeG.style("display", showAvailability ? "none" : null);
+    thresholdGroup.style("display", showAvailability ? null : "none");
+  }
+
+  function update(rows, allRows, report) {
     currentRows = rows;
     allObjectiveRows = allRows;
+    currentReport = report;
     yLine = d3.scaleLinear().domain(computeResponseDomain(rows)).range([height - margin.bottom, margin.top]);
     drawYLineAxis();
     moveThreshold(yBar(DEFAULT_THRESHOLD));
 
     const tiempoValues = rows.map(responseValueOf);
     responseStats = { median: median(tiempoValues), average: average(tiempoValues) };
-    updateResponseRefLines(refLineEls, yLine, responseStats, refLegendTexts);
+    if (currentReport === "response") {
+      updateResponseRefLines(refLineEls, yLine, responseStats, refLegendTexts);
+    } else {
+      refLineEls.median.line.style("display", "none");
+      refLineEls.average.line.style("display", "none");
+    }
+    applyReportVisibility();
 
     pinnedDayKey = null;
     pinnedHour = null;
@@ -363,9 +397,9 @@ export function createHoverChart(options) {
     emptyEl.hidden = false;
     svgNode.toggleAttribute("hidden", true);
 
-    weekPanel.reset();
-    periodPanel.reset();
-    allDaysPanel.reset();
+    weekPanel.reset(currentReport);
+    periodPanel.reset(currentReport);
+    allDaysPanel.reset(currentReport);
   }
 
   return { update };
