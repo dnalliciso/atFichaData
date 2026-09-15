@@ -2,7 +2,7 @@ import { reportConfig, resolveCellColor, specialStateFor, responseValueOf, media
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { shortDateLabel } from "../../../../core/excel.js";
-import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
+import { createResponseRefLines } from "./heatmapRefLines.js";
 import { renderLineBridges } from "./heatmapLineBridge.js";
 
 const TRANSITION_MS = 500;
@@ -81,7 +81,6 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left, 34);
 
   // Eje Y de disponibilidad (%) — dominio fijo [0,100], no depende del
   // ancho, se dibuja una sola vez.
@@ -121,7 +120,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     .x((cell) => x(cell.dateKeyValue) + x.bandwidth() / 2)
     .y((cell) => yLine(responseValueOf(cell.row)));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
-  const refLineEls = appendResponseRefLines(svg, margin, initialWidth);
+  const refLines = createResponseRefLines(svg, legendResponse, margin, initialWidth, margin.left, 34);
 
   let currentReport = "availability";
   function applyReportVisibility() {
@@ -134,7 +133,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     pointsG.style("display", showAvailability ? "none" : null);
     linePath.style("display", showAvailability ? "none" : null);
     bridgeG.style("display", showAvailability ? "none" : null);
-    refLineEls.group.style("display", showAvailability ? "none" : null);
+    refLines.group.style("display", showAvailability ? "none" : null);
   }
 
   function show(periodRows, dayKey, hour, stats) {
@@ -166,10 +165,7 @@ export function createDayListPanel(containerEl, tooltipEl, { emptyText, noDataTe
     // a diferencia de `stats` (general, del Período completo, pasado
     // desde heatmapHoverChart.js).
     const localStats = { median: median(values), average: average(values) };
-    updateResponseRefLines(refLineEls, yLine, { general: stats, local: localStats }, refLegendTexts, {
-      x1: margin.left,
-      x2: currentWidth - margin.right,
-    });
+    refLines.update(yLine, { general: stats, local: localStats }, { x1: margin.left, x2: currentWidth - margin.right });
 
     xAxisG
       .selectAll("text")

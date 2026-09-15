@@ -4,88 +4,103 @@
 // sobre TODAS las filas del objetivo dentro del Período activo, calculado
 // una sola vez en heatmapHoverChart.js — el mismo valor en los 4 paneles)
 // y el "local" (mediana/promedio solo de los datos que ESE panel muestra
-// — ej. las 24 horas del día, los 7 días de la semana, las N ocurrencias
-// del período — recalculado en cada show()). El patrón de guiones marca
-// mediana vs. promedio; el color marca local vs. general.
+// — recalculado en cada show()). El patrón de guiones marca mediana vs.
+// promedio; el color marca local vs. general.
+//
+// Cada entrada de la leyenda es clickeable para prender/apagar su línea
+// — el estado de encendido/apagado vive acá (por instancia, así que es
+// independiente por gráfico: apagar "Promedio" en el panel del día no
+// afecta al de la semana) y se re-aplica en cada update() para que no se
+// pierda al pasar el mouse a otra celda.
 const KIND_DEFS = [
-  { key: "medianGeneral", css: "median-general", label: "Mediana" },
-  { key: "averageGeneral", css: "average-general", label: "Promedio" },
-  { key: "medianLocal", css: "median-local", label: "Med. local" },
-  { key: "averageLocal", css: "average-local", label: "Prom. local" },
+  { key: "medianGeneral", css: "median-general", label: "Mediana", statGroup: "general", statField: "median" },
+  { key: "averageGeneral", css: "average-general", label: "Promedio", statGroup: "general", statField: "average" },
+  { key: "medianLocal", css: "median-local", label: "Med. local", statGroup: "local", statField: "median" },
+  { key: "averageLocal", css: "average-local", label: "Prom. local", statGroup: "local", statField: "average" },
 ];
 
-export function appendResponseRefLines(svg, margin, width) {
-  const group = svg.append("g").attr("class", "hover-chart-reflines");
-  const elements = { group };
-  KIND_DEFS.forEach(({ key, css }) => {
-    elements[key] = {
-      line: group
-        .append("line")
-        .attr("class", `hover-chart-refline hover-chart-refline--${css}`)
-        .attr("x1", margin.left)
-        .attr("x2", width - margin.right),
-    };
-  });
-  return elements;
-}
-
-// El valor numérico no se dibuja pegado a la línea (colisionaba con las
-// etiquetas del eje Y cuando alguna caía cerca de un tick, o entre sí
-// cuando dos caían cerca) — se actualiza en el texto de la leyenda
-// (`legendTexts`, de appendResponseRefLegend), que tiene posición fija y
-// no depende de dónde caiga el valor en la escala.
-//
-// `stats` = `{ general: {median, average}, local: {median, average} }`.
-//
-// `extent` es opcional: solo lo necesitan los paneles de ancho variable
-// (heatmapDayListPanel.js), donde el <svg> se reusa entre shows() pero su
-// ancho cambia según cuántas celdas haya — sin esto, la línea se quedaría
-// con el x2 del primer render para siempre. Los paneles de ancho fijo
-// (día/semana) no lo pasan y la línea simplemente no se reposiciona.
-export function updateResponseRefLines(elements, yLine, stats, legendTexts, extent) {
-  const set = (key, value, baseLabel) => {
-    const { line } = elements[key];
-    if (extent) line.attr("x1", extent.x1).attr("x2", extent.x2);
-    const visible = Number.isFinite(value);
-    line.style("display", visible ? null : "none");
-    if (visible) {
-      const y = yLine(value);
-      line.attr("y1", y).attr("y2", y);
-    }
-    legendTexts?.[key]?.text(visible ? `${baseLabel}: ${value.toFixed(1)}s` : `${baseLabel}: -`);
-  };
-  set("medianGeneral", stats?.general?.median, "Mediana");
-  set("averageGeneral", stats?.general?.average, "Promedio");
-  set("medianLocal", stats?.local?.median, "Med. local");
-  set("averageLocal", stats?.local?.average, "Prom. local");
-}
-
-// Entrada de leyenda (línea de muestra + texto) para cada referencia, en
-// su propia fila (row 2) debajo de la fila de "Tiempo de respuesta" (row
-// 1) — 4 entradas no entran cómodas en la misma fila que esa. Devuelve
-// los nodos de texto para que updateResponseRefLines les vaya sumando el
-// valor calculado cada vez.
-// Separación entre entradas medida a ojo con margen de sobra para el
-// valor más largo posible ("125.3s"), no solo el caso típico ("24.9s") —
-// con menos separación el line-sample de una entrada se solapaba con el
-// texto de la anterior.
+// Separación entre entradas de leyenda medida a ojo con margen de sobra
+// para el valor más largo posible ("125.3s"), no solo el caso típico
+// ("24.9s") — con menos separación el line-sample de una entrada se
+// solapaba con el texto de la anterior (medido con getBBox()).
 const LEGEND_ENTRY_OFFSETS = [0, 130, 260, 390];
 
-export function appendResponseRefLegend(legend, x, y) {
-  const addEntry = (css, label, entryX) => {
-    legend
+export function createResponseRefLines(svg, legend, margin, initialWidth, legendX, legendY) {
+  const group = svg.append("g").attr("class", "hover-chart-reflines");
+  const disabledKeys = new Set();
+  let current = { yLine: null, stats: null };
+
+  const lines = {};
+  const legendTexts = {};
+
+  KIND_DEFS.forEach(({ key, css }) => {
+    lines[key] = group
+      .append("line")
+      .attr("class", `hover-chart-refline hover-chart-refline--${css}`)
+      .attr("x1", margin.left)
+      .attr("x2", initialWidth - margin.right);
+  });
+
+  function apply() {
+    const { yLine, stats } = current;
+    if (!yLine) return;
+    KIND_DEFS.forEach(({ key, label, statGroup, statField }) => {
+      const value = stats?.[statGroup]?.[statField];
+      const line = lines[key];
+      const visible = !disabledKeys.has(key) && Number.isFinite(value);
+      line.style("display", visible ? null : "none");
+      if (visible) {
+        const y = yLine(value);
+        line.attr("y1", y).attr("y2", y);
+      }
+      legendTexts[key]?.text(Number.isFinite(value) ? `${label}: ${value.toFixed(1)}s` : `${label}: -`);
+    });
+  }
+
+  KIND_DEFS.forEach(({ key, css, label }, index) => {
+    const entryX = legendX + LEGEND_ENTRY_OFFSETS[index];
+    const entry = legend.append("g").attr("class", "hover-chart-reflegend-entry");
+    // Área de click invisible más grande que la línea/texto reales — sin
+    // esto el único blanco clickeable era el trazo de 1.5px de la línea
+    // de muestra (los <text> tienen pointer-events:none por la regla
+    // genérica .axis-label de base.css).
+    entry
+      .append("rect")
+      .attr("class", "hover-chart-reflegend-hitarea")
+      .attr("x", entryX - 4)
+      .attr("y", legendY - 10)
+      .attr("width", LEGEND_ENTRY_OFFSETS[index + 1] != null ? LEGEND_ENTRY_OFFSETS[index + 1] - LEGEND_ENTRY_OFFSETS[index] - 6 : 124)
+      .attr("height", 20)
+      .attr("fill", "transparent");
+    entry
       .append("line")
       .attr("class", `hover-chart-refline hover-chart-refline--${css}`)
       .attr("x1", entryX)
       .attr("x2", entryX + 20)
-      .attr("y1", y)
-      .attr("y2", y);
-    return legend.append("text").attr("class", "axis-label").attr("x", entryX + 26).attr("y", y + 4).text(label);
-  };
-  return {
-    medianGeneral: addEntry("median-general", "Mediana", x + LEGEND_ENTRY_OFFSETS[0]),
-    averageGeneral: addEntry("average-general", "Promedio", x + LEGEND_ENTRY_OFFSETS[1]),
-    medianLocal: addEntry("median-local", "Med. local", x + LEGEND_ENTRY_OFFSETS[2]),
-    averageLocal: addEntry("average-local", "Prom. local", x + LEGEND_ENTRY_OFFSETS[3]),
-  };
+      .attr("y1", legendY)
+      .attr("y2", legendY);
+    legendTexts[key] = entry.append("text").attr("class", "axis-label").attr("x", entryX + 26).attr("y", legendY + 4).text(label);
+    entry.on("click", () => {
+      if (disabledKeys.has(key)) disabledKeys.delete(key);
+      else disabledKeys.add(key);
+      entry.classed("hover-chart-reflegend-entry--off", disabledKeys.has(key));
+      apply();
+    });
+  });
+
+  // `extent` es opcional: solo lo necesitan los paneles de ancho variable
+  // (heatmapDayListPanel.js), donde el <svg> se reusa entre shows() pero
+  // su ancho cambia según cuántas celdas haya — sin esto, la línea se
+  // quedaría con el x2 del primer render para siempre. Los paneles de
+  // ancho fijo (día/semana) no lo pasan y la línea simplemente no se
+  // reposiciona.
+  function update(yLine, stats, extent) {
+    current = { yLine, stats };
+    if (extent) {
+      Object.values(lines).forEach((line) => line.attr("x1", extent.x1).attr("x2", extent.x2));
+    }
+    apply();
+  }
+
+  return { group, update };
 }

@@ -2,7 +2,7 @@ import { reportConfig, resolveCellColor, specialStateFor, responseValueOf, media
 import { showTooltip, moveTooltip, hideTooltip } from "../../../../shared/tooltip.js";
 import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { dateKey } from "../../../../core/excel.js";
-import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
+import { createResponseRefLines } from "./heatmapRefLines.js";
 import { renderLineBridges } from "./heatmapLineBridge.js";
 
 // Letra de día de semana a partir de Date#getDay() (0=domingo…6=sábado) —
@@ -98,7 +98,6 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left, 34);
 
   svg
     .append("g")
@@ -146,7 +145,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     .y((cell) => yLine(cellResponseValue(cell)));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
   const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
-  const refLineEls = appendResponseRefLines(svg, margin, width);
+  const refLines = createResponseRefLines(svg, legendResponse, margin, width, margin.left, 34);
 
   let currentReport = "availability";
   function applyReportVisibility() {
@@ -159,7 +158,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     pointsG.style("display", showAvailability ? "none" : null);
     linePath.style("display", showAvailability ? "none" : null);
     bridgeG.style("display", showAvailability ? "none" : null);
-    refLineEls.group.style("display", showAvailability ? "none" : null);
+    refLines.group.style("display", showAvailability ? "none" : null);
   }
 
   function show(allRows, dayKey, hour, stats) {
@@ -185,7 +184,7 @@ export function createWeekPanel(containerEl, tooltipEl) {
     // que se muestran), a diferencia de `stats` (general, del Período
     // completo, pasado desde heatmapHoverChart.js).
     const localStats = { median: median(values), average: average(values) };
-    updateResponseRefLines(refLineEls, yLine, { general: stats, local: localStats }, refLegendTexts);
+    refLines.update(yLine, { general: stats, local: localStats });
 
     barsG
       .selectAll("rect")

@@ -5,7 +5,7 @@ import { hourlyTooltipHtml } from "./tooltipContent.js";
 import { createWeekPanel } from "./heatmapWeekPanel.js";
 import { createPeriodPanel } from "./heatmapPeriodPanel.js";
 import { createAllDaysPanel } from "./heatmapAllDaysPanel.js";
-import { appendResponseRefLines, updateResponseRefLines, appendResponseRefLegend } from "./heatmapRefLines.js";
+import { createResponseRefLines } from "./heatmapRefLines.js";
 import { renderLineBridges } from "./heatmapLineBridge.js";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -89,7 +89,6 @@ export function createHoverChart(options) {
     .attr("x", margin.left + 26)
     .attr("y", 19)
     .text("Tiempo de respuesta");
-  const refLegendTexts = appendResponseRefLegend(legendResponse, margin.left, 34);
 
   // Eje X (horas) — fijo, una sola vez.
   svg
@@ -142,7 +141,7 @@ export function createHoverChart(options) {
     .y((row) => yLine(responseValueOf(row)));
   const linePath = svg.append("path").attr("class", "hover-chart-line").attr("fill", "none");
   const bridgeG = svg.append("g").attr("class", "hover-chart-line-bridges");
-  const refLineEls = appendResponseRefLines(svg, margin, width);
+  const refLines = createResponseRefLines(svg, legendResponse, margin, width, margin.left, 34);
 
   // Umbral arrastrable — mismo patrón que renderGradientLegend en
   // shared/legend.js, reusando sus clases .legend-handle-* de
@@ -248,7 +247,7 @@ export function createHoverChart(options) {
     // (a diferencia de responseStats, que es del Período completo).
     const localValues = sorted.map(responseValueOf);
     const localStats = { median: median(localValues), average: average(localValues) };
-    updateResponseRefLines(refLineEls, yLine, { general: responseStats, local: localStats }, refLegendTexts);
+    refLines.update(yLine, { general: responseStats, local: localStats });
 
     barsG
       .selectAll("rect")
@@ -375,7 +374,7 @@ export function createHoverChart(options) {
     pointsG.style("display", showAvailability ? "none" : null);
     linePath.style("display", showAvailability ? "none" : null);
     bridgeG.style("display", showAvailability ? "none" : null);
-    refLineEls.group.style("display", showAvailability ? "none" : null);
+    refLines.group.style("display", showAvailability ? "none" : null);
     thresholdGroup.style("display", showAvailability ? null : "none");
   }
 
@@ -393,7 +392,7 @@ export function createHoverChart(options) {
     // null hasta que renderDay() la calcule al mostrar un día.
     const tiempoValues = rows.map(responseValueOf);
     responseStats = { median: median(tiempoValues), average: average(tiempoValues) };
-    updateResponseRefLines(refLineEls, yLine, { general: responseStats, local: { median: null, average: null } }, refLegendTexts);
+    refLines.update(yLine, { general: responseStats, local: { median: null, average: null } });
     applyReportVisibility();
 
     pinnedDayKey = null;

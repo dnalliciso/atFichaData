@@ -155,3 +155,10 @@ El patrón de guiones sigue marcando mediana (6 3) vs. promedio (2 3) en
 ambos pares; el color es lo que distingue general de local. La pestaña
 Disponibilidad no tiene líneas de referencia propias. Ver
 `median`/`average` en `colorScales.js` y `heatmapRefLines.js`.
+
+Cada una de las 4 entradas de la leyenda es clickeable: apaga o prende
+esa línea sola (se atenúa la entrada mientras está apagada). El estado
+es independiente por gráfico — apagar "Promedio" en el panel del día no
+lo apaga en el de la semana — y se mantiene al pasar el mouse a otra
+celda (`createResponseRefLines` en `heatmapRefLines.js` guarda el estado
+de encendido/apagado y lo vuelve a aplicar en cada `update()`).
